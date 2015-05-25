@@ -7,7 +7,7 @@
 #else
 #include <GL/glut.h>
 #endif
-# include "materiais.h"
+
 
 
 //==================================================================== Definir cores
@@ -33,7 +33,7 @@ char     texto[30];
 //------------------------------------------------------------ Observador
 GLfloat  PI = 3.14159;
 GLfloat  rVisao=3.0, aVisao=0.5*PI, incVisao=0.1;   /* incvisao=incremento da visao quando anda  ,rvisao=raio de visao do observador  aVisao-abertura do angulo de visao  */
-GLfloat  obsPini[] ={3, 1, .5*xC};                 /*eixos x y z , o y é a altura*/
+GLfloat  obsPini[] ={5, 1, 10};                 /*eixos x y z , o y é a altura*/
 GLfloat  obsPfin[] ={obsPini[0]-rVisao*cos(aVisao), obsPini[1], obsPini[2]-rVisao*sin(aVisao)};
 
 //------------------------------------------------------------ Iluminacao
@@ -62,22 +62,17 @@ GLfloat focoCut = 15.0; 								/* ângulo do foco */
 GLfloat focoCorDif[4] = {0.85, 0.85, 0.85, 1.0}; 		/* intensidade da cor difusa */
 GLfloat focoCorEsp[4] = {1.0 , 1.0, 1.0, 1.0}; 			/* intensidade da cor especular */
 
-/* Materiais */
-GLint colorM = 1;										/*color material activo = 1*/
-GLint material = 4; 									/* tipo de material aplicado à esfera */
-GLint material1 = 5; 									/* tipo de material aplicado ao torus da frente */
-GLint material2 = 18; 									/* tipo de material aplicado do torus de trás */
-GLint material3 = 9; 									/* tipo de material aplicado ao cone */
-GLint material4 = 4; 									/* tipo de material aplicado ao quadrado */
 
 //…………………………………………………………………………………………………………………………………………… Esfera
 GLfloat matAmbiente[] = {1.0,1.0,1.0,1.0};	  
 GLfloat matDifusa[]   = {1.0,1.0,1.0,1.0};	  
 GLfloat matEspecular[]= {1.0, 1.0, 1.0, 1.0}; 
 GLint   especMaterial = 20;
-GLint quadsize=1;
 
 
+GLint quadsize=2;
+GLint dim= 32; //numero divisoes da grelha
+GLfloat multipier=5/2;
 //================================================================================
 //=========================================================================== INIT
 //================================================================================
@@ -105,156 +100,6 @@ void initLights(void)
 	
 }
 
-void initMaterials(int material) /* Determina as componentes e os seus valores */
-{
-    switch (material)
-    {
-        case 0: /* esmerald */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, esmeraldAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, esmeraldDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, esmeraldSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, esmeraldCoef);
-            break;
-        case 1: /* jade */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, jadeAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, jadeDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, jadeSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, jadeCoef);
-            break;
-        case 2: /* obsidian */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, obsidianAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, obsidianDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, obsidianSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, obsidianCoef);
-            break;
-        case 3: /* pearl */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, pearlAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, pearlDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, pearlSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, pearlCoef);
-            break;
-        case 4: /* ruby */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, rubyAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, rubyDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, rubySpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, rubyCoef);
-            break;
-        case 5: /* turquoise */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, turquoiseAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, turquoiseDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, turquoiseSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, turquoiseCoef);
-            break;
-        case 6: /* brass */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, brassAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, brassDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, brassSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, brassCoef);
-            break;
-        case 7: /* bronze */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, bronzeAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, bronzeDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, bronzeSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, bronzeCoef);
-            break;
-        case 8: /* chrome */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, chromeAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, chromeDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, chromeSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, chromeCoef);
-        break;
-        case 9: /* copper */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, copperAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, copperDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, copperSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, copperCoef);
-            break;
-        case 10: /* gold */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, goldAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, goldDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, goldSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, goldCoef);
-            break;
-        case 11: /* silver */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, silverAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, silverDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, silverSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, silverCoef);
-            break;
-        case 12: /* blackPlastic */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blackPlasticAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, blackPlasticDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, blackPlasticSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, blackPlasticCoef);
-            break;
-        case 13: /* cyankPlastic */
-            glMaterialfv(GL_FRONT, GL_AMBIENT, cyanPlasticAmb);
-            glMaterialfv(GL_FRONT, GL_DIFFUSE, cyanPlasticDif);
-            glMaterialfv(GL_FRONT, GL_SPECULAR, cyanPlasticSpec);
-            glMateriali(GL_FRONT, GL_SHININESS, cyanPlasticCoef);
-            break;
-        case 14: /* greenPlastic */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, greenPlasticAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, greenPlasticDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, greenPlasticSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, greenPlasticCoef);
-            break;
-        case 15: /* redPlastic */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, redPlasticAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, redPlasticDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, redPlasticSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, redPlasticCoef);
-            break;
-        case 16: /* whitePlastic */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, whitePlasticAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, whitePlasticDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, whitePlasticSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, whitePlasticCoef);
-            break;
-        case 17: /* yellowPlastic */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, yellowPlasticAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, yellowPlasticDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, yellowPlasticSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, yellowPlasticCoef);
-            break;
-        case 18: /* blackRubber */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blackRubberAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, blackRubberDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, blackRubberSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, blackRubberCoef);
-            break;
-        case 19: /* cyanRubber */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, cyanRubberAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, cyanRubberDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, cyanRubberSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, cyanRubberCoef);
-            break;
-        case 20: /* greenRubber */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, greenRubberAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, greenRubberDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, greenRubberSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, greenRubberCoef);
-            break;
-        case 21: /* redRubber */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, redRubberAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, redRubberDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, redRubberSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, redRubberCoef);
-            break;
-        case 22: /* whiteRubber */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, whiteRubberAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, whiteRubberDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, whiteRubberSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, whiteRubberCoef);
-            break;
-        case 23: /* yellowRubber */
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, yellowRubberAmb);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, yellowRubberDif);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, yellowRubberSpec);
-            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, yellowRubberCoef);
-            break;
-    }
-}
 
 
 void init(void)
@@ -308,13 +153,45 @@ void quad(int normal,int size){
             glVertex3d(10, 10, 0);
             glVertex3d(0, 10, 0);
         }
+    glEnd();
 
+}
+
+
+//desenha um quadrado de lado quadsize  e normal x=1, y=2, z=3
+void quad2(int normal,int size){
+
+    GLint i,j;
+    float med_dim=(float)dim/2;
+
+    glBegin(GL_QUADS);
+    
+    for (i=0;i<dim*multipier;i++)
+    {   
+        for (j=0;j<dim*multipier;j++)
+        {
+        
+            switch(normal)
+            {
+                case 1:
+                    glNormal3f(1, 0, 0); // definição da normal ao polígono 
+                    break;
+                case 2:
+                    glNormal3f(0, 1, 0); // definição da normal ao polígono 
+                    break;
+                case 3:
+                    glNormal3f(0, 0, 1); // definição da normal ao polígono 
+                    break;
+            }
             
+            glVertex3d((float)j/med_dim,0,(float)i/med_dim); //r[0]
+            glVertex3d((float)(j+1)/med_dim,0,(float)i/med_dim); // r[1]
+            glVertex3d((float)(j+1)/med_dim,0,(float)(i+1)/med_dim);
+            glVertex3d((float)j/med_dim,0,(float)(i+1)/med_dim);
+        }
+    }
 
     glEnd();
-        
-
-
 
 }
 
@@ -326,201 +203,100 @@ void drawScene(){
 	else
 		glColor4f(BLACK);
 	
-    if(eixos){
-    glColor4f(VERDE);
-    if(!colorM)
-         initMaterials(19);
+    if(eixos)
+    {
+        glColor4f(VERDE);
 
+        glBegin(GL_LINES);                      
+            glVertex3i(0,0,-xC); 
+            glVertex3i(0,0, xC);        
+        glEnd();
+        glBegin(GL_LINES);                      
+            glVertex3i(0,-xC,0); 
+            glVertex3i(0,xC,0);         
+        glEnd();
+        glBegin(GL_LINES);                      
+            glVertex3i(-xC,0,0); 
+            glVertex3i( xC,0,0);        
+        glEnd();
 
-    glBegin(GL_LINES);                      
-        glVertex3i(0,0,-xC); 
-        glVertex3i(0,0, xC);        
-    glEnd();
-    glBegin(GL_LINES);                      
-        glVertex3i(0,-xC,0); 
-        glVertex3i(0,xC,0);         
-    glEnd();
-    glBegin(GL_LINES);                      
-        glVertex3i(-xC,0,0); 
-        glVertex3i( xC,0,0);        
-    glEnd();
+        //eixos para o plano
+        glBegin(GL_LINES);  //z=5                    
+            glVertex3i(-xC,0,5); 
+            glVertex3i( xC,0,5);        
+        glEnd();
 
+         glBegin(GL_LINES); //z=10                     
+            glVertex3i(-xC,0,10); 
+            glVertex3i( xC,0,10);        
+        glEnd();
 
-    //eixos para o plano
-    glBegin(GL_LINES);  //z=5                    
-        glVertex3i(-xC,0,5); 
-        glVertex3i( xC,0,5);        
-    glEnd();
+        glBegin(GL_LINES); //x=5                     
+            glVertex3i(5,0,-xC); 
+            glVertex3i(5,0,xC);        
+        glEnd();
 
-     glBegin(GL_LINES); //z=10                     
-        glVertex3i(-xC,0,10); 
-        glVertex3i( xC,0,10);        
-    glEnd();
-
-    glBegin(GL_LINES); //x=5                     
-        glVertex3i(5,0,-xC); 
-        glVertex3i(5,0,xC);        
-    glEnd();
-
-     glBegin(GL_LINES); //x=5                     
-        glVertex3i(10,0,-xC); 
-        glVertex3i(10,0,xC);        
-    glEnd();
+         glBegin(GL_LINES); //x=5                     
+            glVertex3i(10,0,-xC); 
+            glVertex3i(10,0,xC);        
+        glEnd();
 
     }
+
+	glEnable(GL_COLOR_MATERIAL);
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE ); 
     
-
-	//************************************************** Poligonos
-	//  As cores dos objectos devem ser definidas:
-	//		1. Cor usando o glColorMAterial
-	//		2. Propriedades materiais (a implementar)
-	
-	if(colorM ==0)	/*propriedades dos materiais*/
-	{
-		glDisable(GL_COLOR_MATERIAL);
-
-        glPushMatrix();
-            initMaterials(material);
-            glTranslatef(2.5, 1.2, 5);
-            glutSolidSphere(1.5, 1000, 1000);//radius , (slices(longitude), stacks(latitude))->malhas
-        glPopMatrix();
-
+    //******************************************************************************************************* Objectos
     
-        //plano de baixo
-        glPushMatrix();
-            initMaterials(0);
-            glTranslatef(0, -.6, 0);
-            glRotatef(90,1,0,0);  
-            //glScalef(2,0,0); 
-            quad(2,1);
-        glPopMatrix();
+    
+    glPushMatrix();
+        glColor4f(LARANJA);
+        glTranslatef(5, 1.5, 5);
+        glutSolidSphere(1.5, 1000, 1000);//radius , (slices(longitude), stacks(latitude))->malhas
+    glPopMatrix();
 
 
+    //tampa de cima
+     glPushMatrix();
+        glColor4f(AZUL);
+        glTranslatef(3,multipier*2 , 3);
+        quad2(2,0);//pode estar mal
+    glPopMatrix();
 
-        //lado de baixo
-        glPushMatrix();
-            initMaterials(material);
-            glTranslatef(7, 0, 4.5);
-            glRotatef(90,1,0,0);   
-            quad(2,0);
-        glPopMatrix();
+    //atras   
+    glPushMatrix();
+        glColor4f(AZUL);
+        glTranslatef(3, 0, 3);
+        glRotatef(-90,1,0,0); 
+        quad2(2,0);//pode estar mal
+    glPopMatrix();
 
 
-        //lado da esfera
-        glPushMatrix();
-            initMaterials(material);
-            glTranslatef(7, 0, 5.5);
-            glRotatef(90,0,1,0);   
-            quad(2,0);//pode estar mal
-        glPopMatrix();
+    //contrario a bola
+     glPushMatrix();
+        glColor4f(AZUL);
+        glTranslatef(3+multipier*2, 0, 3+multipier*2);
+        glRotatef(180,0,1,0); //para a reflexao ficar na face exterior da caixa, senão ficava interior
+        glRotatef(90,0,0,1); //torno do z
+        quad2(2,0);//pode estar mal
+    glPopMatrix();
+    
+    //em baixo
+    glPushMatrix();
+        glColor4f(AZUL);
+        glTranslatef(3, 0, 3);   
+        quad2(2,0);//pode estar mal
+    glPopMatrix();
 
-        //para tras
-        glPushMatrix();
-            initMaterials(material);
-            glTranslatef(8, 0, 4.5);
-            glRotatef(90,0,0,1);   
-            quad(2,0);//pode estar mal
-        glPopMatrix();
-
-         //para frente
-        glPushMatrix();
-            initMaterials(material);
-            glTranslatef(8, 0, 5.5);
-            glRotatef(90,0,0,1);   
-            quad(2,0);//pode estar mal
-        glPopMatrix();
-
-         //contrario a bola
-        glPushMatrix();
-            initMaterials(material);
-            glTranslatef(8, 0, 5.5);
-            glRotatef(90,0,1,0);   
-            quad(1,0);//pode estar mal
-        glPopMatrix();
-
-         //cima
-        glPushMatrix();
-            initMaterials(material);
-            glTranslatef(7, 1, 4.5);
-            glRotatef(90,1,0,0);   
-            quad(2,0);
-        glPopMatrix();
-
-	}
-	else	/*usando glColorMaterial*/
-	{	
-		glEnable(GL_COLOR_MATERIAL);
-		glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE ); 
-	
-
-        glPushMatrix();
-            glColor4f(AMARELO);
-            glTranslatef(2.5, 1.2, 5);
-            glutSolidSphere(1.5, 1000, 1000);//radius , (slices(longitude), stacks(latitude))->malhas
-        glPopMatrix();
+    //lado da bola
+    glPushMatrix();
+        glColor4f(AZUL);
+        glTranslatef(3, 0, 3);
+        glRotatef(90,0,0,1); 
+        quad2(2,0);//pode estar mal
+    glPopMatrix();
 
     
-        //plano de baixo
-        glPushMatrix();
-            glColor4f(LARANJA);
-            glTranslatef(0, -.1, 0);
-            glRotatef(90,1,0,0);  
-            //glScalef(2,0,0); 
-            quad(2,1);
-        glPopMatrix();
-
-
-
-        //lado de baixo
-        glPushMatrix();
-            glColor4f(LARANJA);
-            glTranslatef(7, 0, 4.5);
-            glRotatef(90,1,0,0);   
-            quad(2,0);
-        glPopMatrix();
-
-
-        //lado da esfera
-        glPushMatrix();
-            glColor4f(VERMELHO);
-            glTranslatef(7, 0, 5.5);
-            glRotatef(90,0,1,0);   
-            quad(2,0);//pode estar mal
-        glPopMatrix();
-
-        //para tras
-        glPushMatrix();
-            glColor4f(VERDE);
-            glTranslatef(8, 0, 4.5);
-            glRotatef(90,0,0,1);   
-            quad(2,0);//pode estar mal
-        glPopMatrix();
-
-         //para frente
-        glPushMatrix();
-            glColor4f(VERDE);
-            glTranslatef(8, 0, 5.5);
-            glRotatef(90,0,0,1);   
-            quad(2,0);//pode estar mal
-        glPopMatrix();
-
-         //contrario a bola
-        glPushMatrix();
-             glColor4f(VERMELHO);
-            glTranslatef(8, 0, 5.5);
-            glRotatef(90,0,1,0);   
-            quad(1,0);//pode estar mal
-        glPopMatrix();
-
-         //cima
-        glPushMatrix();
-            glColor4f(AZUL);
-            glTranslatef(7, 1, 4.5);
-            glRotatef(90,1,0,0);   
-            quad(2,0);
-        glPopMatrix();
-
-	}
    	glutPostRedisplay();
 }
 
@@ -605,8 +381,6 @@ void display(void)
 	desenhaTexto(texto,-12,1,-9);
 	sprintf(texto, "%d - Foco", ligaFoco);
 	desenhaTexto(texto,-12,1,-12);
-	sprintf(texto, "%d - Color Material", colorM);
-	desenhaTexto(texto,-12,1,-15);
     sprintf(texto, "%d - Eixos ", eixos);
     desenhaTexto(texto,-12,1,-3);
 
@@ -718,12 +492,6 @@ void keyboard(unsigned char key, int x, int y)
             ligaFoco = !ligaFoco;
             glutPostRedisplay();
             break;
-        /* -------------------- ColorMaterial */
-        case 'm':
-        case 'M':
-            colorM = !colorM;
-            glutPostRedisplay();
-            break;
         /* -------------------- Escape */
         case 27:
             exit(0);
@@ -784,6 +552,7 @@ int main(int argc, char** argv){
 1-> objectos            //falta o plano de baixo
 ->visita guiada
 
+reflexoe 
 
 
 2->cores e texturas
@@ -792,6 +561,7 @@ int main(int argc, char** argv){
 
 
 
+reflexoes no cubo e meter resto das merdas ok
 
 
 
