@@ -320,7 +320,12 @@ void drawScene(){
         quad2(2,0);
     glPopMatrix();
 
-
+    //cima
+    glPushMatrix();
+        glColor4f(AZUL);
+        glTranslatef(3, .001, 3);
+        quad2(2,0);
+    glPopMatrix();
 
     //contrario a bola
      glPushMatrix();
