@@ -20,8 +20,11 @@
 
 #include "RgbImage.h"
 
-#ifndef RGBIMAGE_DONT_USE_OPENGL
-#include <GL/gl.h>
+#ifdef __APPLE__
+#include <OpenGL/OpenGL.h>
+#include <GLUT/glut.h>
+#else
+#include <GL/glut.h>
 #endif
 
 
