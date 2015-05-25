@@ -1,0 +1,4 @@
+*.sh
+*.cpp.orig
+*.out
+

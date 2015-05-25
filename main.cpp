@@ -7,7 +7,7 @@
 #else
 #include <GL/glut.h>
 #endif
-
+#include "RgbImage.h"
 
 
 //==================================================================== Definir cores
@@ -33,7 +33,7 @@ char     texto[30];
 //------------------------------------------------------------ Observador
 GLfloat  PI = 3.14159;
 GLfloat  rVisao=3.0, aVisao=0.5*PI, incVisao=0.1;   /* incvisao=incremento da visao quando anda  ,rvisao=raio de visao do observador  aVisao-abertura do angulo de visao  */
-GLfloat  obsPini[] ={3, 1, .5*xC};                 /*eixos x y z , o y é a altura*/
+GLfloat  obsPini[] ={3, 1, .5*xC};                 /*eixos x y z , o y Ã© a altura*/
 GLfloat  obsPfin[] ={obsPini[0]-rVisao*cos(aVisao), obsPini[1], obsPini[2]-rVisao*sin(aVisao)};
 
 //------------------------------------------------------------ Iluminacao
@@ -43,11 +43,11 @@ GLint   noite=1;
 GLfloat luzGlobalCor[4]={1.0,1.0,1.0,1.0};   
 /*Lampada tecto(ambiente local)*/
 GLint ligaLuz = 0;
-GLfloat localPos[4] = {xC/2, 10.0, xC/2, 1.0}; 			/* posição da fonte de luz */
+GLfloat localPos[4] = {xC/2, 10.0, xC/2, 1.0}; 			/* posiÃ§Ã£o da fonte de luz */
 GLfloat localCor[4] = {0.1, 0.1, 0.1, 1.0}; 			/* intensidade da cor */
-GLfloat localAttCon = 1.0; 								/* atenuação atmosféria C (constante) */
-GLfloat localAttLin = 0.05; 							/* atenuação atmosféria L (linear) */
-GLfloat localAttQua = 0.0; 								/* atenuação atmosféria Q (quadrática) */
+GLfloat localAttCon = 1.0; 								/* atenuaÃ§Ã£o atmosfÃ©ria C (constante) */
+GLfloat localAttLin = 0.05; 							/* atenuaÃ§Ã£o atmosfÃ©ria L (linear) */
+GLfloat localAttQua = 0.0; 								/* atenuaÃ§Ã£o atmosfÃ©ria Q (quadrÃ¡tica) */
 
 /* Lanterna (local) */
 GLint ligaFoco = 0;
@@ -57,25 +57,26 @@ GLfloat incMaxH = 0.5, incMaxV = 0.35;
 GLfloat focoPini[] = {obsPini[0], obsPini[1], obsPini[2], 1.0};
 GLfloat focoPfin[] = {obsPini[0] - rFoco * cos(aFoco), obsPini[1], obsPini[2] - rFoco * sin(aFoco), 1.0};
 GLfloat focoDir[] = {focoPfin[0] - focoPini[0], 0, focoPfin[2] - focoPini[2]};
-GLfloat focoExp = 10.0; 								/* concentraçao da luz */
-GLfloat focoCut = 15.0; 								/* ângulo do foco */
+GLfloat focoExp = 10.0; 								/* concentraÃ§ao da luz */
+GLfloat focoCut = 15.0; 								/* Ã¢ngulo do foco */
 GLfloat focoCorDif[4] = {0.85, 0.85, 0.85, 1.0}; 		/* intensidade da cor difusa */
 GLfloat focoCorEsp[4] = {1.0 , 1.0, 1.0, 1.0}; 			/* intensidade da cor especular */
 
 /* Materiais */
 GLint colorM = 1;										/*color material activo = 1*/
-GLint material = 4; 									/* tipo de material aplicado à esfera */
+GLint material = 4; 									/* tipo de material aplicado Ã  esfera */
 GLint material1 = 5; 									/* tipo de material aplicado ao torus da frente */
-GLint material2 = 18; 									/* tipo de material aplicado do torus de trás */
+GLint material2 = 18; 									/* tipo de material aplicado do torus de trÃ¡s */
 GLint material3 = 9; 									/* tipo de material aplicado ao cone */
 GLint material4 = 4; 									/* tipo de material aplicado ao quadrado */
 
-//…………………………………………………………………………………………………………………………………………… Esfera
+//â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦ Esfera
 GLfloat matAmbiente[] = {1.0,1.0,1.0,1.0};	  
 GLfloat matDifusa[]   = {1.0,1.0,1.0,0.7};	  
 GLfloat matEspecular[]= {1.0, 1.0, 1.0, 1.0}; 
 GLint   especMaterial = 20;
-
+GLint quadsize=1;
+GLint multiplier=5/2;
 
 //================================================================================
 //=========================================================================== INIT
@@ -86,7 +87,7 @@ GLint floor_dim= 32; //numero divisoes da grelha
 
 
 
-//……………………………………………………………………………………………………………………………………………………… Iluminacao
+//â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦ Iluminacao
 void initLights(void)
 {
 	/*Ambiente*/
@@ -107,17 +108,32 @@ void initLights(void)
 	
 }
 
-
+void criaDefineTexturas()
+{
+    //----------------------------------------- Chao y=0
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    imag.LoadBmpFile("grass1.bmp");
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, imag.GetNumCols(),imag.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,imag.ImageData());
+}
 
 void init(void)
 {
 	glClearColor(WHITE);
-	glShadeModel(GL_SMOOTH);
-	glEnable(GL_COLOR_MATERIAL);
-	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE ); 
-	initLights();
-	glEnable(GL_LIGHTING);  
-	glEnable(GL_DEPTH_TEST);
+    glShadeModel(GL_SMOOTH);
+    glEnable(GL_COLOR_MATERIAL);
+    criaDefineTexturas();
+    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE ); 
+    initLights();
+    glEnable(GL_LIGHTING);  
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);    
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 	
 
@@ -131,37 +147,65 @@ void desenhaTexto(char *string, GLfloat x, GLfloat y, GLfloat z)
 }
 
 //desenha um quadrado de lado quadsize ou 10 e normal x=1, y=2, z=3
-void quad(int normal,int size){
-
-    glBegin(GL_QUADS);
-
-        switch(normal){
+void quad(int normal,int size,int texture)
+{
+    if(texture ==1)    //alterado
+    {
+        float med_dim=(float)floor_dim/2;
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D,tex);
+        glPushMatrix();
+        glBegin(GL_QUADS);
+        for (int i=0;i<floor_dim*5;i++)
+        {   
+            for (int j=0;j<floor_dim*5;j++)
+            {
+                glNormal3f(0,1,0);
+                glTexCoord2f((float)j/floor_dim,(float)i/floor_dim);
+                glVertex3d((float)j/med_dim,0,(float)i/med_dim); 
+                glTexCoord2f((float)(j+1)/floor_dim,(float)i/floor_dim);
+                glVertex3d((float)(j+1)/med_dim,0,(float)i/med_dim);    
+                glTexCoord2f((float)(j+1)/floor_dim,(float)(i+1)/floor_dim);
+                glVertex3d((float)(j+1)/med_dim,0,(float)(i+1)/med_dim);
+                glTexCoord2f((float)j/floor_dim,(float)(i+1)/floor_dim);
+                glVertex3d((float)j/med_dim,0,(float)(i+1)/med_dim);
+            }
+        }
+        glEnd();
+        glPopMatrix();
+        glDisable(GL_TEXTURE_2D);
+    }
+    else
+    {
+        glBegin(GL_QUADS);
+        switch(normal)
+        {
             case 1:
-                glNormal3f(1, 0, 0); // definição da normal ao polígono 
+                glNormal3f(1, 0, 0); // definiï¿½ï¿½o da normal ao polï¿½gono 
                 break;
             case 2:
-                glNormal3f(0, 1, 0); // definição da normal ao polígono 
+                glNormal3f(0, 1, 0); // definiï¿½ï¿½o da normal ao polï¿½gono 
                 break;
             case 3:
-                glNormal3f(0, 0, 1); // definição da normal ao polígono 
+                glNormal3f(0, 0, 1); // definiï¿½ï¿½o da normal ao polï¿½gono 
                 break;
-
         }
-        if(!size){
+        if(!size)
+        {
             glVertex3d(0, 0, 0);
             glVertex3d(quadsize, 0, 0);
             glVertex3d(quadsize, quadsize, 0);
             glVertex3d(0, quadsize, 0);
-
         }
-        else{
+        else
+        {
             glVertex3d(0, 0, 0);
             glVertex3d(10, 0, 0);
             glVertex3d(10, 10, 0);
             glVertex3d(0, 10, 0);
         }
     glEnd();
-
+    }
 }
 
 
@@ -169,25 +213,25 @@ void quad(int normal,int size){
 void quad2(int normal,int size){
 
     GLint i,j;
-    float med_dim=(float)dim/2;
+    float med_dim=(float)floor_dim/2;
 
     glBegin(GL_QUADS);
     
-    for (i=0;i<dim*multipier;i++)
+    for (i=0;i<floor_dim*multiplier;i++)
     {   
-        for (j=0;j<dim*multipier;j++)
+        for (j=0;j<floor_dim*multiplier;j++)
         {
         
             switch(normal)
             {
                 case 1:
-                    glNormal3f(1, 0, 0); // definição da normal ao polígono 
+                    glNormal3f(1, 0, 0); // definiÃ§Ã£o da normal ao polÃ­gono 
                     break;
                 case 2:
-                    glNormal3f(0, 1, 0); // definição da normal ao polígono 
+                    glNormal3f(0, 1, 0); // definiÃ§Ã£o da normal ao polÃ­gono 
                     break;
                 case 3:
-                    glNormal3f(0, 0, 1); // definição da normal ao polígono 
+                    glNormal3f(0, 0, 1); // definiÃ§Ã£o da normal ao polÃ­gono 
                     break;
             }
             
@@ -254,70 +298,43 @@ void drawScene(){
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE ); 
 
-	glEnable(GL_COLOR_MATERIAL);
-	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE ); 
+    glPushMatrix();
+         glColor4f(LARANJA);
+        glTranslatef(5, 1.5, 5);
+        glutSolidSphere(1.5, 256, 256);//radius , (slices(longitude), stacks(latitude))->malhas
+     glPopMatrix();
+
+    //plano de baixo(chao)--- alterado
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D,tex);
+    glPushMatrix();
+        quad(2,1,1);
+    glPopMatrix();
+    glDisable(GL_TEXTURE_2D);
     
-    //lado de baixo
-    glPushMatrix();
-        glColor4f(LARANJA);
-        glTranslatef(7, 0, 4.5);
-        glRotatef(90,1,0,0);   
-        quad(2,0,0);
-    glPopMatrix();
-
-    //lado da esfera
-    glPushMatrix();
+    //atras
+     glPushMatrix();
         glColor4f(VERMELHO);
-        glTranslatef(7, 0, 5.5);
-        glRotatef(90,0,1,0);   
-        quad(2,0,0);//pode estar mal
-    glPopMatrix();
-        
-    //para tras
-    glPushMatrix();
-        glColor4f(VERDE);
-        glTranslatef(8, 0, 4.5);
-        glRotatef(90,0,0,1);   
-        quad(2,0,0);//pode estar mal
+        glTranslatef(3, 0, 3);
+        glRotatef(-90,1,0,0);   
+        quad2(2,0);
     glPopMatrix();
 
-    //para frente
-    glPushMatrix();
-        glColor4f(VERDE);
-        glTranslatef(8, 0, 5.5);
-        glRotatef(90,0,0,1);   
-        quad(2,0,0);//pode estar mal
-    glPopMatrix();
 
-    //contrario a bola
-    glPushMatrix();
-        glColor4f(VERMELHO);
-        glTranslatef(8, 0, 5.5);
-        glRotatef(90,0,1,0);   
-        quad(1,0,0);//pode estar mal
-    glPopMatrix();
-
-    //cima
-    glPushMatrix();
-        glColor4f(AZUL);
-        glTranslatef(7, 1, 4.5);
-        glRotatef(90,1,0,0);   
-        quad(2,0,0);
-    glPopMatrix();
 
     //contrario a bola
      glPushMatrix();
         glColor4f(AZUL);
-        glTranslatef(3+multipier*2, 0, 3+multipier*2);
-        glRotatef(180,0,1,0); //para a reflexao ficar na face exterior da caixa, senão ficava interior
+        glTranslatef(3+multiplier*2, 0, 3+multiplier*2);
+        glRotatef(180,0,1,0); //para a reflexao ficar na face exterior da caixa, senÃ£o ficava interior
         glRotatef(90,0,0,1); //torno do z
         quad2(2,0);//pode estar mal
     glPopMatrix();
     
-    //em baixo
-    glPushMatrix();
+    //em cima
+   glPushMatrix();
         glColor4f(AZUL);
-        glTranslatef(3, 0, 3);   
+        glTranslatef(3, multiplier*2, 3);   
         quad2(2,0);//pode estar mal
     glPopMatrix();
 
@@ -342,7 +359,7 @@ GLvoid resize(GLsizei width, GLsizei height)
 }
 
 
-/* ================================================== ILUMINAÇÃO */
+/* ================================================== ILUMINAÃ‡ÃƒO */
 void iluminacao()
 {
     if (ligaLuz == 1)
@@ -413,7 +430,7 @@ void display(void)
 	sprintf(texto, "%d - Tecto", ligaLuz);
 	desenhaTexto(texto,-12,1,-9);
 	sprintf(texto, "%d - Foco", ligaFoco);
-	desenhaTexto(texto,-12,1,-15);
+	desenhaTexto(texto,-12,1,-12);
     sprintf(texto, "%d - Eixos ", eixos);
     desenhaTexto(texto,-12,1,-3);
 
@@ -452,7 +469,7 @@ void updateVisao()
 void keyboard(unsigned char key, int x, int y)
 {
     switch (key){
-        /* -------------------- Direção da lanterna */
+        /* -------------------- DireÃ§Ã£o da lanterna */
         case 'A'://desacivar/activar os eixos
         case 'a':
             if(eixos)
@@ -513,7 +530,7 @@ void keyboard(unsigned char key, int x, int y)
             glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzGlobalCor);
             glutPostRedisplay();
             break;
-        /* -------------------- Iluminação sala */
+        /* -------------------- IluminaÃ§Ã£o sala */
         case 't':
         case 'T':
             ligaLuz = !ligaLuz;
