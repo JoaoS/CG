@@ -13,7 +13,7 @@
 //==================================================================== Definir cores
 #define AZUL     0.0, 0.0, 1.0, 1.0
 #define VERMELHO 1.0, 0.0, 0.0, 1.0
-#define AMARELO  1.0, 1.0, 0.0, 1.0
+#define AMARELO  1.0, 1.0, 0.0, 0.5
 #define VERDE    0.0, 1.0, 0.0, 1.0
 #define LARANJA  0.8, 0.6, 0.1, 1.0
 #define WHITE    1.0, 1.0, 1.0, 1.0
@@ -33,7 +33,7 @@ char     texto[30];
 //------------------------------------------------------------ Observador
 GLfloat  PI = 3.14159;
 GLfloat  rVisao=3.0, aVisao=0.5*PI, incVisao=0.1;   /* incvisao=incremento da visao quando anda  ,rvisao=raio de visao do observador  aVisao-abertura do angulo de visao  */
-GLfloat  obsPini[] ={5, 1, 10};                 /*eixos x y z , o y é a altura*/
+GLfloat  obsPini[] ={3, 1, .5*xC};                 /*eixos x y z , o y é a altura*/
 GLfloat  obsPfin[] ={obsPini[0]-rVisao*cos(aVisao), obsPini[1], obsPini[2]-rVisao*sin(aVisao)};
 
 //------------------------------------------------------------ Iluminacao
@@ -62,20 +62,27 @@ GLfloat focoCut = 15.0; 								/* ângulo do foco */
 GLfloat focoCorDif[4] = {0.85, 0.85, 0.85, 1.0}; 		/* intensidade da cor difusa */
 GLfloat focoCorEsp[4] = {1.0 , 1.0, 1.0, 1.0}; 			/* intensidade da cor especular */
 
+/* Materiais */
+GLint colorM = 1;										/*color material activo = 1*/
+GLint material = 4; 									/* tipo de material aplicado à esfera */
+GLint material1 = 5; 									/* tipo de material aplicado ao torus da frente */
+GLint material2 = 18; 									/* tipo de material aplicado do torus de trás */
+GLint material3 = 9; 									/* tipo de material aplicado ao cone */
+GLint material4 = 4; 									/* tipo de material aplicado ao quadrado */
 
 //…………………………………………………………………………………………………………………………………………… Esfera
 GLfloat matAmbiente[] = {1.0,1.0,1.0,1.0};	  
-GLfloat matDifusa[]   = {1.0,1.0,1.0,1.0};	  
+GLfloat matDifusa[]   = {1.0,1.0,1.0,0.7};	  
 GLfloat matEspecular[]= {1.0, 1.0, 1.0, 1.0}; 
 GLint   especMaterial = 20;
 
 
-GLint quadsize=2;
-GLint dim= 32; //numero divisoes da grelha
-GLfloat multipier=5/2;
 //================================================================================
 //=========================================================================== INIT
 //================================================================================
+GLuint  tex;
+RgbImage imag;
+GLint floor_dim= 32; //numero divisoes da grelha
 
 
 
@@ -205,6 +212,7 @@ void drawScene(){
 	
     if(eixos)
     {
+    
         glColor4f(VERDE);
 
         glBegin(GL_LINES);                      
@@ -226,7 +234,7 @@ void drawScene(){
             glVertex3i( xC,0,5);        
         glEnd();
 
-         glBegin(GL_LINES); //z=10                     
+        glBegin(GL_LINES); //z=10                     
             glVertex3i(-xC,0,10); 
             glVertex3i( xC,0,10);        
         glEnd();
@@ -236,41 +244,66 @@ void drawScene(){
             glVertex3i(5,0,xC);        
         glEnd();
 
-         glBegin(GL_LINES); //x=5                     
+        glBegin(GL_LINES); //x=5                     
             glVertex3i(10,0,-xC); 
             glVertex3i(10,0,xC);        
         glEnd();
 
     }
+    
+	glEnable(GL_COLOR_MATERIAL);
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE ); 
 
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE ); 
     
-    //******************************************************************************************************* Objectos
-    
-    
+    //lado de baixo
     glPushMatrix();
         glColor4f(LARANJA);
-        glTranslatef(5, 1.5, 5);
-        glutSolidSphere(1.5, 1000, 1000);//radius , (slices(longitude), stacks(latitude))->malhas
+        glTranslatef(7, 0, 4.5);
+        glRotatef(90,1,0,0);   
+        quad(2,0,0);
     glPopMatrix();
 
-
-    //tampa de cima
-     glPushMatrix();
-        glColor4f(AZUL);
-        glTranslatef(3,multipier*2 , 3);
-        quad2(2,0);//pode estar mal
+    //lado da esfera
+    glPushMatrix();
+        glColor4f(VERMELHO);
+        glTranslatef(7, 0, 5.5);
+        glRotatef(90,0,1,0);   
+        quad(2,0,0);//pode estar mal
+    glPopMatrix();
+        
+    //para tras
+    glPushMatrix();
+        glColor4f(VERDE);
+        glTranslatef(8, 0, 4.5);
+        glRotatef(90,0,0,1);   
+        quad(2,0,0);//pode estar mal
     glPopMatrix();
 
-    //atras   
+    //para frente
+    glPushMatrix();
+        glColor4f(VERDE);
+        glTranslatef(8, 0, 5.5);
+        glRotatef(90,0,0,1);   
+        quad(2,0,0);//pode estar mal
+    glPopMatrix();
+
+    //contrario a bola
+    glPushMatrix();
+        glColor4f(VERMELHO);
+        glTranslatef(8, 0, 5.5);
+        glRotatef(90,0,1,0);   
+        quad(1,0,0);//pode estar mal
+    glPopMatrix();
+
+    //cima
     glPushMatrix();
         glColor4f(AZUL);
-        glTranslatef(3, 0, 3);
-        glRotatef(-90,1,0,0); 
-        quad2(2,0);//pode estar mal
+        glTranslatef(7, 1, 4.5);
+        glRotatef(90,1,0,0);   
+        quad(2,0,0);
     glPopMatrix();
-
 
     //contrario a bola
      glPushMatrix();
@@ -380,7 +413,7 @@ void display(void)
 	sprintf(texto, "%d - Tecto", ligaLuz);
 	desenhaTexto(texto,-12,1,-9);
 	sprintf(texto, "%d - Foco", ligaFoco);
-	desenhaTexto(texto,-12,1,-12);
+	desenhaTexto(texto,-12,1,-15);
     sprintf(texto, "%d - Eixos ", eixos);
     desenhaTexto(texto,-12,1,-3);
 
