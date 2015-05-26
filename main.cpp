@@ -54,6 +54,7 @@ GLint ligaFoco = 0;
 GLfloat rFoco = 1.1, aFoco = aVisao;
 GLfloat incH = 0.0, incV = 0.0;
 GLfloat incMaxH = 0.5, incMaxV = 0.35;
+//lanterna interligada ao observador-foco
 GLfloat focoPini[] = {obsPini[0], obsPini[1], obsPini[2], 1.0};
 GLfloat focoPfin[] = {obsPini[0] - rFoco * cos(aFoco), obsPini[1], obsPini[2] - rFoco * sin(aFoco), 1.0};
 GLfloat focoDir[] = {focoPfin[0] - focoPini[0], 0, focoPfin[2] - focoPini[2]};
@@ -61,14 +62,6 @@ GLfloat focoExp = 10.0; 								/* concentraçao da luz */
 GLfloat focoCut = 15.0; 								/* ângulo do foco */
 GLfloat focoCorDif[4] = {0.85, 0.85, 0.85, 1.0}; 		/* intensidade da cor difusa */
 GLfloat focoCorEsp[4] = {1.0 , 1.0, 1.0, 1.0}; 			/* intensidade da cor especular */
-
-/* Materiais */
-GLint colorM = 1;										/*color material activo = 1*/
-GLint material = 4; 									/* tipo de material aplicado à esfera */
-GLint material1 = 5; 									/* tipo de material aplicado ao torus da frente */
-GLint material2 = 18; 									/* tipo de material aplicado do torus de trás */
-GLint material3 = 9; 									/* tipo de material aplicado ao cone */
-GLint material4 = 4; 									/* tipo de material aplicado ao quadrado */
 
 //…………………………………………………………………………………………………………………………………………… Esfera
 GLfloat matAmbiente[] = {1.0,1.0,1.0,1.0};	  
@@ -91,7 +84,7 @@ GLint floor_dim= 32; //numero divisoes da grelha
 void initLights(void)
 {
 	/*Ambiente*/
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzGlobalCor);
+	//glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzGlobalCor);
     /* Teto */
     glLightfv(GL_LIGHT0, GL_POSITION, localPos);
     glLightfv(GL_LIGHT0, GL_AMBIENT, localCor);
@@ -298,11 +291,11 @@ void drawScene(){
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE ); 
 
-    glPushMatrix();
+    /*glPushMatrix();
          glColor4f(LARANJA);
         glTranslatef(5, 1.5, 5);
         glutSolidSphere(1.5, 256, 256);//radius , (slices(longitude), stacks(latitude))->malhas
-     glPopMatrix();
+     glPopMatrix();*/
 
     //plano de baixo(chao)--- alterado
     glEnable(GL_TEXTURE_2D);
@@ -349,6 +342,14 @@ void drawScene(){
         glTranslatef(3, 0, 3);
         glRotatef(90,0,0,1); 
         quad2(2,0);//pode estar mal
+    glPopMatrix();
+
+
+ //bola
+    glPushMatrix();
+        glColor4f(AMARELO);
+        glTranslatef(5, 1.55, 5);
+        glutSolidSphere(1.5, 256, 256);//radius , (slices(longitude), stacks(latitude))->malhas
     glPopMatrix();
 
     
@@ -617,12 +618,6 @@ reflexoe
 
 
 reflexoes no cubo e meter resto das merdas ok
-
-
-
-
-
-
 
 
 
