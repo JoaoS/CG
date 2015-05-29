@@ -13,14 +13,14 @@
 //==================================================================== Definir cores
 #define AZUL     0.0, 0.0, 1.0, 1.0
 #define VERMELHO 1.0, 0.0, 0.0, 1.0
-#define AMARELO  1.0, 1.0, 0.0, 0.5
+#define AMARELO  1.0, 1.0, 0.0, 0.8
 #define VERDE    0.0, 1.0, 0.0, 1.0
 #define LARANJA  0.8, 0.6, 0.1, 1.0
 #define WHITE    1.0, 1.0, 1.0, 1.0
 #define BLACK    0.0, 0.0, 0.0, 1.0
 #define GRAY1    0.2, 0.2, 0.2, 1.0
 #define GRAY2    0.93, 0.93, 0.93, 1.0
-
+#define N_TRONCOS 12
 
 //================================================================================
 //===========================================================Variaveis e constantes
@@ -64,6 +64,9 @@ GLfloat focoCorDif[4] = {0.85, 0.85, 0.85, 1.0}; 		/* intensidade da cor difusa 
 GLfloat focoCorEsp[4] = {1.0 , 1.0, 1.0, 1.0}; 			/* intensidade da cor especular */
 
 //…………………………………………………………………………………………………………………………………………… Esfera
+GLfloat raioEsfera = 0.1;
+GLfloat velEsfera = 0.05;
+GLfloat posEsfera[] = {4, 0.1, 8};
 GLfloat matAmbiente[] = {1.0,1.0,1.0,1.0};	  
 GLfloat matDifusa[]   = {1.0,1.0,1.0,0.7};	  
 GLfloat matEspecular[]= {1.0, 1.0, 1.0, 1.0}; 
@@ -71,13 +74,18 @@ GLint   especMaterial = 20;
 GLint quadsize=1;
 GLint multiplier=5/2;
 
-//================================================================================
-//=========================================================================== INIT
-//================================================================================
-GLuint  tex;
+//…………………………………………………………………………………………………………………………………………… texturas
+GLuint  tex[3];
 RgbImage imag;
+
+//…………………………………………………………………………………………………………………………………………… malha de poligonos
 GLint floor_dim= 32; //numero divisoes da grelha
 
+//…………………………………………………………………………………………………………………………………………… labirinto					
+GLfloat troncoPos[N_TRONCOS][3] = {{3.0,0.2,3.2},{3.0,0.15,5.0},{3.0,0.1,6.25},{4.4,0.15,3.0},{3.9,0.15,4.9},{4.4,0.2,6},{3.7,0.15,6.9},{4.5,0.2,5.8},{5,0.2,4},{5.2,0.1,4},{6,0.1,4.5}};
+GLfloat troncoRot[N_TRONCOS][4] =  {{90, 0, 1, 0},{90, 0, 1, 0},{90, 0, 1, 0},{90,0,0,1},{90,0,0,1},{90,0,0,1},{90,0,1,0},{90,0,1,0},{90,0,0,1},{90,0,1,0},{90,0,0,1}};
+GLfloat troncoDim[N_TRONCOS][3] = {{0.2,0.2,1.25},{0.15,0.15,0.75},{0.1,0.1,0.5},{0.15,0.15,1.25},{0.15,0.15,0.60},{0.2,0.2,1},{0.15,0.15,0.5},{0.2,0.2,2.1},{0.2,0.2,1.25},{0.1,0.1,1.25},{0.1,0.1,0.75}};
+GLfloat diskRadius[N_TRONCOS] = {0.2,0.15,0.1,0.15,0.15,0.2,0.15,0.2,0.2,0.1,0.1};
 
 
 //……………………………………………………………………………………………………………………………………………………… Iluminacao
@@ -104,14 +112,24 @@ void initLights(void)
 void criaDefineTexturas()
 {
     //----------------------------------------- Chao y=0
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
+    glGenTextures(1, &tex[0]);
+    glBindTexture(GL_TEXTURE_2D, tex[0]);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     imag.LoadBmpFile("grass1.bmp");
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, imag.GetNumCols(),imag.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,imag.ImageData());
+    //----------------------------------------- troncos
+    glGenTextures(1, &tex[1]);
+    glBindTexture(GL_TEXTURE_2D, tex[1]);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    imag.LoadBmpFile("wood.bmp");
     glTexImage2D(GL_TEXTURE_2D, 0, 3, imag.GetNumCols(),imag.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,imag.ImageData());
 }
 
@@ -146,7 +164,7 @@ void quad(int normal,int size,int texture)
     {
         float med_dim=(float)floor_dim/2;
         glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D,tex);
+        glBindTexture(GL_TEXTURE_2D,tex[0]);
         glPushMatrix();
         glBegin(GL_QUADS);
         for (int i=0;i<floor_dim*5;i++)
@@ -239,6 +257,26 @@ void quad2(int normal,int size){
 
 }
 
+void draw_troncos(GLint k)
+{
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D,tex[1]);	
+	glPushMatrix();		
+		glTranslatef(troncoPos[k][0],troncoPos[k][1],troncoPos[k][2]);
+		glRotatef (troncoRot[k][0],troncoRot[k][1],troncoRot[k][2],troncoRot[k][3]);
+		GLUquadricObj*  y = gluNewQuadric( );		
+		gluQuadricDrawStyle(y, GLU_FILL);			
+		gluQuadricNormals(y, GLU_SMOOTH);   		
+		gluQuadricTexture(y,GL_TRUE);				
+		gluCylinder(y,troncoDim[k][0],troncoDim[k][1],troncoDim[k][2],32,32);
+		glTranslatef(0,0,troncoDim[k][2]);
+		gluDisk(y, 0.0, diskRadius[k], 32, 32);			
+		gluDeleteQuadric(y);						
+	glPopMatrix();
+	glDisable(GL_TEXTURE_2D);
+}
+
+
 void drawScene(){
 	
 	//============================================Eixos
@@ -291,20 +329,14 @@ void drawScene(){
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE ); 
 
-    /*glPushMatrix();
-         glColor4f(LARANJA);
-        glTranslatef(5, 1.5, 5);
-        glutSolidSphere(1.5, 256, 256);//radius , (slices(longitude), stacks(latitude))->malhas
-     glPopMatrix();*/
-
-    //plano de baixo(chao)--- alterado
+    //plano de baixo(chao)
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D,tex);
+    glBindTexture(GL_TEXTURE_2D,tex[0]);
     glPushMatrix();
         quad(2,1,1);
     glPopMatrix();
     glDisable(GL_TEXTURE_2D);
-    
+  
     //atras
      glPushMatrix();
         glColor4f(VERMELHO);
@@ -344,12 +376,29 @@ void drawScene(){
         quad2(2,0);//pode estar mal
     glPopMatrix();
 
+    //troncos
+    for(int k =0;k<N_TRONCOS;k++)
+    	draw_troncos(k);
+ 	//tunel
+    glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D,tex[1]);	
+	glPushMatrix();		
+		glTranslatef(6.8,0.2,5.8);
+		GLUquadricObj*  y = gluNewQuadric( );		
+		gluQuadricDrawStyle(y, GLU_FILL);			
+		gluQuadricNormals(y, GLU_SMOOTH);   		
+		gluQuadricTexture(y,GL_TRUE);				
+		gluCylinder(y,0.2,0.2,1,32,32);			
+		gluDeleteQuadric(y);						
+	glPopMatrix();
+	glDisable(GL_TEXTURE_2D);
 
- //bola
+
+ 	//bola
     glPushMatrix();
         glColor4f(AMARELO);
-        glTranslatef(5, 1.55, 5);
-        glutSolidSphere(1.5, 256, 256);//radius , (slices(longitude), stacks(latitude))->malhas
+        glTranslatef(posEsfera[0],posEsfera[1],posEsfera[2]);
+        glutSolidSphere(raioEsfera, 256, 256);//radius , (slices(longitude), stacks(latitude))->malhas
     glPopMatrix();
 
     
@@ -471,6 +520,50 @@ void updateVisao()
     glutPostRedisplay();
 }
 
+int check_colisions(GLfloat ball_x,GLfloat ball_y,GLfloat ball_z)
+{	
+	for(int i=0;i<N_TRONCOS;i++)
+	{
+		if(troncoRot[i][2] ==1)	// ---
+		{
+			if(ball_x + raioEsfera > troncoPos[i][0] && ball_x-raioEsfera < troncoPos[i][0] + troncoDim[i][2])
+			{
+				if(ball_z+raioEsfera > troncoPos[i][2]-troncoDim[i][0] && ball_z-raioEsfera < troncoPos[i][2]+troncoDim[i][0])
+				{
+					return 1;
+				}
+			}
+		}
+		if(troncoRot[i][3] ==1) //  |
+		{
+			if(ball_x + raioEsfera  > troncoPos[i][0]-troncoDim[i][0] && ball_x-raioEsfera < troncoPos[i][0] + troncoDim[i][0])
+			{
+				if(ball_z+raioEsfera > troncoPos[i][2]-troncoDim[i][0] && ball_z-raioEsfera < troncoPos[i][2]+troncoDim[i][2])
+				{
+					return 1;
+				}
+			}
+		}
+	}
+	//check cube walls collisions
+	if(ball_z>3 && ball_z < 7 && ball_x >3 && ball_x <7)
+	{
+		if(ball_z < 3 + raioEsfera)
+		{
+			return 1;
+		}
+		if(ball_x < 3 + raioEsfera)
+		{
+			return 1;
+		}
+		if(ball_x > 7 - raioEsfera)
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
+
 //======================================================= EVENTOS
 void keyboard(unsigned char key, int x, int y)
 {
@@ -548,6 +641,67 @@ void keyboard(unsigned char key, int x, int y)
             ligaFoco = !ligaFoco;
             glutPostRedisplay();
             break;
+        /*-----------------movimento da bola---*/
+        case 'i':
+        case 'I':
+        	if(check_colisions(posEsfera[0],posEsfera[1],posEsfera[2]-velEsfera)==1)
+        	{
+        		;
+        	}
+        	else
+        	{
+        		posEsfera[2]-= velEsfera;
+        	}
+        	if(posEsfera[2] < raioEsfera)
+        	{
+        		posEsfera[2] = raioEsfera;
+        	}
+        	break;
+        case 'k':
+        case 'K':
+        	if(check_colisions(posEsfera[0],posEsfera[1],posEsfera[2]+velEsfera)==1)
+        	{
+        		;
+        	}
+        	else
+        	{
+        		posEsfera[2]+= velEsfera;
+        	}
+        	if(posEsfera[2] > 10-raioEsfera)
+        	{
+        		posEsfera[2] = 10-raioEsfera;
+        	}
+        	break;
+        case 'j':
+        case 'J':
+        	if(check_colisions(posEsfera[0]-velEsfera,posEsfera[1],posEsfera[2])==1)
+        	{
+        		;
+        	}
+        	else
+        	{
+        		posEsfera[0]-= velEsfera;
+        	}
+        	if(posEsfera[0] < raioEsfera)
+        	{
+        		posEsfera[0] = raioEsfera;
+        	}
+        	break;
+        case 'l':
+        case 'L':
+        	if(check_colisions(posEsfera[0]+velEsfera,posEsfera[1],posEsfera[2])==1)
+        	{
+        		;
+        	}
+        	else
+        	{
+        		posEsfera[0]+= velEsfera;
+        	}
+        	if(posEsfera[0] > 10-raioEsfera)
+        	{
+        		posEsfera[0] = 10-raioEsfera;
+        	}
+        	break;
         /* -------------------- Escape */
         case 27:
             exit(0);
