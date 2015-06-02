@@ -1,0 +1,37 @@
+int check_colisions(GLfloat ball_x,GLfloat ball_y,GLfloat ball_z)
+{	
+	for(int i=0;i<N_TRONCOS;i++)
+	{
+		if(troncoRot[i][2] ==1)
+		{
+			if(ball_x + raioEsfera > troncoPos[i][0] && ball_x-raioEsfera < troncoPos[i][0] + troncoDim[i][2])
+			{
+				if(ball_z+raioEsfera > troncoPos[i][2]-troncoDim[i][0] && ball_z-raioEsfera < troncoPos[i][2]+troncoDim[i][0])
+				{
+					return 1;
+				}
+			}
+		}
+		if(troncoRot[i][3] ==1)
+		{
+			if(ball_x + raioEsfera  > troncoPos[i][0] && ball_x-raioEsfera < troncoPos[i][0] + troncoDim[i][0])
+			{
+				if(ball_z+raioEsfera > troncoPos[i][2]-troncoDim[i][0] && ball_z-raioEsfera < troncoPos[i][2]+troncoDim[i][0])
+				{
+					return 1;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+
+	//tunel collision glTranslatef(6.8,0.2,5.8);
+	if((ball_x + raioEsfera  > 6.8-0.2) && (ball_x-raioEsfera < 6.8 + 0.2))
+	{
+		if((ball_z+raioEsfera > 5.8-0.2) && (ball_z-raioEsfera < 5.8+1))
+		{
+			return 1;
+		}
+	}

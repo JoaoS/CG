@@ -29,15 +29,6 @@
 
 
 
-/*adicionado*/
-
-typedef struct Pixel
-{
-	unsigned char R;
-	unsigned char G;
-	unsigned char B;
-}pixel;
-
 RgbImage::RgbImage( int numRows, int numCols )
 {
 	NumRows = numRows;
@@ -146,16 +137,6 @@ bool RgbImage::LoadBmpFile( const char* filename )
 	fclose( infile );	// Close the file
 	return true;
 }
-
-/////////////////////////////////ADICIONADO////////////////////////////////////////////////
-
-
-
-
-
-
-////////////////////////////////Fim///////////////////////////////////////////////////////
-
 
 
 short RgbImage::readShort( FILE* infile )

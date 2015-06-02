@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <cstring>
+#include <iostream>
 #ifdef __APPLE__
 #include <OpenGL/OpenGL.h>
 #include <GLUT/glut.h>
@@ -8,32 +10,51 @@
 #include <GL/glut.h>
 #endif
 #include "RgbImage.h"
+#include <unistd.h>
+#include <time.h>
 
-
-//==================================================================== Definir cores
+//==================================================================== Definir cores, nº de obstaculos por nivel e nº de texturas
 #define AZUL     0.0, 0.0, 1.0, 1.0
 #define VERMELHO 1.0, 0.0, 0.0, 1.0
 #define AMARELO  1.0, 1.0, 0.0, 0.8
+#define AMARELO2  1.0, 1.0, 0.0, 1.0
 #define VERDE    0.0, 1.0, 0.0, 1.0
 #define LARANJA  0.8, 0.6, 0.1, 1.0
 #define WHITE    1.0, 1.0, 1.0, 1.0
 #define BLACK    0.0, 0.0, 0.0, 1.0
 #define GRAY1    0.2, 0.2, 0.2, 1.0
-#define GRAY2    0.93, 0.93, 0.93, 1.0
+#define GRAY2    0.6, 0.6, 0.6, 1.0
 #define N_TRONCOS 12
+#define N_TRONCOS2 30
+#define N_TRONCOS3 30
+#define CUBO_INI 3
+#define CUBO_FIM 7
+#define N_TEX 5
 
-//================================================================================
 //===========================================================Variaveis e constantes
 
+typedef struct level
+{
+    GLfloat n_troncos;                      /*nº de obstaculos*/
+    GLfloat troncoPos[N_TRONCOS2][3];       /*posiçao do obstaculo*/
+    GLfloat troncoRot[N_TRONCOS2][4];       /*rotaçao aplicada ao obstaculo*/
+    GLfloat troncoDim[N_TRONCOS2][3];       /*dimensoes do obstaculo(cilindro)*/
+    GLfloat diskRadius[N_TRONCOS2];         /*raio do disco que tapa o cilindro*/
+    GLfloat tunelPos[3];                    /*posiçao do tunel de final de nivel*/
+    GLfloat tunelDim[3];                    /*dimensoes do tunel*/
+    GLfloat level_entrance[2];              /*limites da entrada no nivel*/
+    GLfloat level_exit[4];                  /*limites da saida do nivel*/
+}Level;
+
 //------------------------------------------------------------ Sistema Coordenadas
-GLfloat  xC=16.0, zC=15.0;                                 /* medidas para os comprimentos dos eixos */
+GLfloat  xC=16.0, zC=15.0;                                 
 GLint    eixos=1;
-GLint    wScreen=800, hScreen=600;                         /*  dimensao da janela   */
+GLint    wScreen=800, hScreen=600;                         
 char     texto[30];
 //------------------------------------------------------------ Observador
 GLfloat  PI = 3.14159;
-GLfloat  rVisao=3.0, aVisao=0.5*PI, incVisao=0.1;   /* incvisao=incremento da visao quando anda  ,rvisao=raio de visao do observador  aVisao-abertura do angulo de visao  */
-GLfloat  obsPini[] ={3, 1, .5*xC};                 /*eixos x y z , o y é a altura*/
+GLfloat  rVisao=3.0, aVisao=0.5*PI, incVisao=0.1;   
+GLfloat  obsPini[] ={3, 1, .5*xC};                 
 GLfloat  obsPfin[] ={obsPini[0]-rVisao*cos(aVisao), obsPini[1], obsPini[2]-rVisao*sin(aVisao)};
 
 //------------------------------------------------------------ Iluminacao
@@ -66,33 +87,94 @@ GLfloat focoCorEsp[4] = {1.0 , 1.0, 1.0, 1.0}; 			/* intensidade da cor especula
 //…………………………………………………………………………………………………………………………………………… Esfera
 GLfloat raioEsfera = 0.1;
 GLfloat velEsfera = 0.05;
-GLfloat posEsfera[] = {4, 0.1, 8};
-GLfloat matAmbiente[] = {1.0,1.0,1.0,1.0};	  
-GLfloat matDifusa[]   = {1.0,1.0,1.0,0.7};	  
-GLfloat matEspecular[]= {1.0, 1.0, 1.0, 1.0}; 
-GLint   especMaterial = 20;
-GLint quadsize=1;
-GLint multiplier=5/2;
+GLfloat posEsfera[] = {5, raioEsfera, 8};
 
 //…………………………………………………………………………………………………………………………………………… texturas
-GLuint  tex[3];
+GLuint  tex[N_TEX];
 RgbImage imag;
 
 //…………………………………………………………………………………………………………………………………………… malha de poligonos
+GLint quadsize=1;
+GLint multiplier=5/2;
 GLint floor_dim= 32; //numero divisoes da grelha
 
-//…………………………………………………………………………………………………………………………………………… labirinto					
-GLfloat troncoPos[N_TRONCOS][3] = {{3.0,0.2,3.2},{3.0,0.15,5.0},{3.0,0.1,6.25},{4.4,0.15,3.0},{3.9,0.15,4.9},{4.4,0.2,6},{3.7,0.15,6.9},{4.5,0.2,5.8},{5,0.2,4},{5.2,0.1,4},{6,0.1,4.5}};
-GLfloat troncoRot[N_TRONCOS][4] =  {{90, 0, 1, 0},{90, 0, 1, 0},{90, 0, 1, 0},{90,0,0,1},{90,0,0,1},{90,0,0,1},{90,0,1,0},{90,0,1,0},{90,0,0,1},{90,0,1,0},{90,0,0,1}};
-GLfloat troncoDim[N_TRONCOS][3] = {{0.2,0.2,1.25},{0.15,0.15,0.75},{0.1,0.1,0.5},{0.15,0.15,1.25},{0.15,0.15,0.60},{0.2,0.2,1},{0.15,0.15,0.5},{0.2,0.2,2.1},{0.2,0.2,1.25},{0.1,0.1,1.25},{0.1,0.1,0.75}};
-GLfloat diskRadius[N_TRONCOS] = {0.2,0.15,0.1,0.15,0.15,0.2,0.15,0.2,0.2,0.1,0.1};
+//…………………………………………………………………………………………………………………………………………… labirinto	
+Level levels[3];                                        /*estruturas com todas as informaçoes de cada nivel*/
+GLint level = 0;                                        /* 0, 1 e 2 */
+GLfloat entrance = 0;                                   /* por onde a bola entrou no labirinto segundo x*/
+/* cor de cada obstaculo no nivel 3, usando ColorMaterial */
+GLfloat lvl3_colors[N_TRONCOS3+1][4] = {VERMELHO,LARANJA,AMARELO2,VERDE,AZUL,WHITE,VERMELHO,GRAY2,BLACK,VERMELHO,AMARELO2,AZUL,VERMELHO,AMARELO2,LARANJA,WHITE,VERDE,AZUL,WHITE,BLACK,VERMELHO,AMARELO2,VERMELHO,AZUL,AMARELO2,AZUL,WHITE,GRAY2,GRAY1,BLACK,LARANJA};
+GLint ascendente = 0;                                   /* descendente = 0, ascendente = 1*. controlar a transparencia dos obstaculos no nivel 3*/
+clock_t t1,t2;
+clock_t level_time[3];
+GLint clock_active = 0;
+GLint end_game = 0;
 
+//---------------------------------------------------------Niveis
+void init_levels()
+{       
+        //level 1
+        levels[0].n_troncos = N_TRONCOS;
+        GLfloat troncoPos[N_TRONCOS][3] = {{3.01,0.2,3.2},{3.01,0.15,5.0},{3.01,0.1,6.25},{4.4,0.15,3.01},{3.9,0.15,4.9},{4.4,0.2,6},{3.7,0.15,6.9},{4.5,0.2,5.8},{5,0.2,4},{5.2,0.1,4},{6,0.1,4.5}};
+        memcpy(levels[0].troncoPos, troncoPos, sizeof(GLfloat) * 3 * N_TRONCOS);
+        GLfloat troncoRot[N_TRONCOS][4] =  {{90, 0, 1, 0},{90, 0, 1, 0},{90, 0, 1, 0},{90,0,0,1},{90,0,0,1},{90,0,0,1},{90,0,1,0},{90,0,1,0},{90,0,0,1},{90,0,1,0},{90,0,0,1}};
+        memcpy(levels[0].troncoRot, troncoRot, sizeof(GLfloat) * 4 * N_TRONCOS);
+        GLfloat troncoDim[N_TRONCOS][3] = {{0.2,0.2,1.25},{0.15,0.15,0.75},{0.1,0.1,0.5},{0.15,0.15,1.25},{0.15,0.15,0.60},{0.2,0.2,1},{0.15,0.15,0.5},{0.2,0.2,2.1},{0.2,0.2,1.25},{0.1,0.1,1.25},{0.1,0.1,0.75}};
+        memcpy(levels[0].troncoDim, troncoDim, sizeof(GLfloat) * 3 * N_TRONCOS);
+        GLfloat diskRadius[N_TRONCOS] = {0.2,0.15,0.1,0.15,0.15,0.2,0.15,0.2,0.2,0.1,0.1};
+        memcpy(levels[0].diskRadius, diskRadius, sizeof(GLfloat) * N_TRONCOS);
+        GLfloat tunelPos[3] = {6.8,0.2,5.85};
+        memcpy(levels[0].tunelPos, tunelPos, sizeof(GLfloat) * 3);
+        GLfloat tunelDim[3] = {0.2,0.2,1.0};
+        memcpy(levels[0].tunelDim, tunelDim, sizeof(GLfloat) * 3);
+        GLfloat level_entrance[2] = {0.0,3.65};
+        memcpy(levels[0].level_entrance, level_entrance, sizeof(GLfloat) * 2);
+        GLfloat level_exit[4] = {6.75,6.95,6.85,7.0};
+        memcpy(levels[0].level_exit, level_exit, sizeof(GLfloat) * 4);
+        //level 2
+        levels[1].n_troncos = N_TRONCOS2;
+        GLfloat troncoPos2[N_TRONCOS2][3] = {{3.2,0.2,6.0},{3.6,0.2,6.0},{4.0,0.2,6.0},{3.01,0.15,5.0},{3.01,0.15,4.70},{3.01,0.15,4.40},{5.0,1.0,6.0},{5.3,1.0,6.0},{5.6,1.0,6.0},{6.7,1.0,6.0},{6.4,1.0,6.0},{3.81,1.0,3.60},{4.11,1.0,3.60},{4.41,1.0,3.60},{4.71,1.0,3.60},{5.01,1.0,3.60},{5.31,1.0,3.60},{5.61,1.0,3.60},{5.91,1.0,3.60},{6.21,1.0,3.60},{5.2,1.0,5.6},{5.2,1.0,5.2},{5.2,1.0,4.8},{5.2,1.0,4.4},{5.2,1.0,4.0},{6.24,0.1,4.5},{6.24,0.1,4.7},{6.24,0.1,4.9},{6.24,0.1,5.1},{6.24,0.1,5.3}};
+        memcpy(levels[1].troncoPos, troncoPos2, sizeof(GLfloat) * 3 * N_TRONCOS2);
+        GLfloat troncoRot2[N_TRONCOS2][4] =  {{90, 0, 0, 1},{90, 0, 0, 1},{90, 0, 0, 1},{90, 0, 1, 0},{90, 0, 1, 0},{90, 0, 1, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90,0, 1, 0},{90,0, 1, 0},{90,0, 1, 0},{90,0, 1, 0},{90,0, 1, 0}};
+        memcpy(levels[1].troncoRot, troncoRot2, sizeof(GLfloat) * 4 * N_TRONCOS2);
+        GLfloat troncoDim2[N_TRONCOS2][3] = {{0.2,0.2,1.0},{0.2,0.2,1.0},{0.2,0.2,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.2,0.2,1.0},{0.2,0.2,1.0},{0.2,0.2,1.0},{0.2,0.2,1.0},{0.2,0.2,1.0},{0.1,0.1,0.75},{0.1,0.1,0.75},{0.1,0.1,0.75},{0.1,0.1,0.75},{0.1,0.1,0.75}};
+        memcpy(levels[1].troncoDim, troncoDim2, sizeof(GLfloat) * 3 * N_TRONCOS2);
+        GLfloat diskRadius2[N_TRONCOS2] = {0.2,0.2,0.2,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.2,0.2,0.2,0.2,0.1,0.1,0.1,0.1,0.1,0.1};
+        memcpy(levels[1].diskRadius, diskRadius2, sizeof(GLfloat) * N_TRONCOS2);
+        GLfloat tunelPos2[3] = {6,0.2,5.85};
+        memcpy(levels[1].tunelPos, tunelPos2, sizeof(GLfloat) * 3);
+        GLfloat tunelDim2[3] = {0.2,0.2,1.0};
+        memcpy(levels[1].tunelDim, tunelDim2, sizeof(GLfloat) * 3);
+        GLfloat level_entrance2[2] = {4.30,4.70};
+        memcpy(levels[1].level_entrance, level_entrance2, sizeof(GLfloat) * 2);
+        GLfloat level_exit2[4] = {5.85,6.05,6.85,7.00};
+        memcpy(levels[1].level_exit, level_exit2, sizeof(GLfloat) * 4);
+        //level 3
+        levels[2].n_troncos = N_TRONCOS3;
+        GLfloat troncoPos3[N_TRONCOS3][3] = {{4.0,1.0,6.8},{4.4,1.0,6.8},{4.8,1.0,6.8},{5.2,1.0,6.8},{5.99,0.15,6.0},{5.99,0.15,6.3},{5.99,0.15,6.6},{5.99,0.15,6.9},{5.5,0.15,3.7},{5.5,0.15,4.0},{5.5,0.15,4.3},{5.2,0.2,4.3},{4.8,0.2,4.3},{5.0,0.55,4.3},{3.01,0.1,5.3},{3.01,0.1,5.5},{3.01,0.1,5.7},{4.7,1.0,3.1},{4.7,1.0,3.3},{4.7,1.0,3.5},{3.01,0.15,3.15},{3.01,0.15,3.45},{3.01,0.15,3.75},{4.4,1.0,4.6},{4.1,1.0,4.6},{3.8,1.0,4.6},{5.2,1.0,6.4},{5.2,1.0,6.1},{5.2,1.0,5.8},{5.2,1.0,5.5}};
+        memcpy(levels[2].troncoPos, troncoPos3, sizeof(GLfloat) * 3 * N_TRONCOS3);
+        GLfloat troncoRot3[N_TRONCOS3][4] =  {{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 0, 1, 0},{90, 0, 1, 0},{90, 0, 1, 0},{90, 0, 1, 0},{90, 0, 1, 0},{90, 0, 1, 0},{90, 0, 1, 0},{90, 0, 0, 1},{90, 0, 0, 1},{90, 0, 0, 1},{90, 0, 1, 0},{90, 0, 1, 0},{90, 0, 1, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 1, 0, 0},{90, 0, 1, 0},{90, 0, 1, 0},{90, 0, 1, 0},{90, 1,0 , 0},{90, 1,0 , 0},{90, 1,0 , 0},{90, 1,0 , 0},{90, 1,0 , 0},{90, 1,0 , 0},{90, 1,0 , 0}};
+        memcpy(levels[2].troncoRot, troncoRot3, sizeof(GLfloat) * 4 * N_TRONCOS3);
+        GLfloat troncoDim3[N_TRONCOS2][3] = {{0.2,0.2,1.0},{0.2,0.2,1.0},{0.2,0.2,1.0},{0.2,0.2,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.2,0.2,1.0},{0.2,0.2,1.0},{0.2,0.2,1.0},{0.1,0.1,1.0},{0.1,0.1,1.0},{0.1,0.1,1.0},{0.1,0.1,1.0},{0.1,0.1,1.0},{0.1,0.1,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0},{0.15,0.15,1.0}};
+        memcpy(levels[2].troncoDim, troncoDim3, sizeof(GLfloat) * 3 * N_TRONCOS3);
+        GLfloat diskRadius3[N_TRONCOS2] = {0.2,0.2,0.2,0.2,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.2,0.2,0.2,0.1,0.1,0.1,0.1,0.1,0.1,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15,0.15};
+        memcpy(levels[2].diskRadius, diskRadius3, sizeof(GLfloat) * N_TRONCOS3);
+        GLfloat tunelPos3[3] = {3.4,0.35,6.5};
+        memcpy(levels[2].tunelPos, tunelPos3, sizeof(GLfloat) * 3);
+        GLfloat tunelDim3[3] = {0.35,0.35,0.5};
+        memcpy(levels[2].tunelDim, tunelDim3, sizeof(GLfloat) * 3);
+        GLfloat level_entrance3[2] = {5.45,5.90};
+        memcpy(levels[2].level_entrance, level_entrance3, sizeof(GLfloat) * 2);
+        GLfloat level_exit3[4] = {3.0,3.65,6.95,7.05};
+        memcpy(levels[2].level_exit, level_exit3, sizeof(GLfloat) * 4);
+
+}
 
 //……………………………………………………………………………………………………………………………………………………… Iluminacao
 void initLights(void)
 {
 	/*Ambiente*/
-	//glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzGlobalCor);
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzGlobalCor);
     /* Teto */
     glLightfv(GL_LIGHT0, GL_POSITION, localPos);
     glLightfv(GL_LIGHT0, GL_AMBIENT, localCor);
@@ -111,7 +193,7 @@ void initLights(void)
 
 void criaDefineTexturas()
 {
-    //----------------------------------------- Chao y=0
+    //----------------------------------------- Chao y=0 nivel 1
     glGenTextures(1, &tex[0]);
     glBindTexture(GL_TEXTURE_2D, tex[0]);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
@@ -121,7 +203,7 @@ void criaDefineTexturas()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     imag.LoadBmpFile("grass1.bmp");
     glTexImage2D(GL_TEXTURE_2D, 0, 3, imag.GetNumCols(),imag.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,imag.ImageData());
-    //----------------------------------------- troncos
+    //----------------------------------------- obstaculos nivel 1
     glGenTextures(1, &tex[1]);
     glBindTexture(GL_TEXTURE_2D, tex[1]);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
@@ -131,6 +213,36 @@ void criaDefineTexturas()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     imag.LoadBmpFile("wood.bmp");
     glTexImage2D(GL_TEXTURE_2D, 0, 3, imag.GetNumCols(),imag.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,imag.ImageData());
+    //----------------------------------------- Chao y=0 nivel 2
+    glGenTextures(1, &tex[2]);
+    glBindTexture(GL_TEXTURE_2D, tex[2]);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    imag.LoadBmpFile("paver.bmp");
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, imag.GetNumCols(),imag.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,imag.ImageData());
+    //----------------------------------------- obstaculos nivel 2
+    glGenTextures(1, &tex[3]);
+    glBindTexture(GL_TEXTURE_2D, tex[3]);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    imag.LoadBmpFile("aluminium.bmp");
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, imag.GetNumCols(),imag.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,imag.ImageData());
+     //----------------------------------------- Chao y=0 nivel 3
+    glGenTextures(1, &tex[4]);
+    glBindTexture(GL_TEXTURE_2D, tex[4]);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    imag.LoadBmpFile("futuristic.bmp");
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, imag.GetNumCols(),imag.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,imag.ImageData());
 }
 
 void init(void)
@@ -138,33 +250,61 @@ void init(void)
 	glClearColor(WHITE);
     glShadeModel(GL_SMOOTH);
     glEnable(GL_COLOR_MATERIAL);
-    criaDefineTexturas();
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE ); 
+    criaDefineTexturas();
     initLights();
     glEnable(GL_LIGHTING);  
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);    
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    init_levels();
 }
 	
 
-//================================================================================
 //======================================================================== DISPLAY
-void desenhaTexto(char *string, GLfloat x, GLfloat y, GLfloat z) 
+void desenhaTexto(char *string, GLfloat x, GLfloat y, GLfloat z,GLint size) 
 {  
+    glDisable(GL_BLEND);
+    glColor3f(1.0,1.0,1.0);
 	glRasterPos3f(x,y,z); 
 	while(*string)
-	  glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, *string++); 
+	{  
+        if(size ==12)
+        {
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *string++); 
+        }
+        else if(size ==18)
+        {
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *string++);  
+        }
+        else
+        {
+            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *string++);
+        }
+    }
+    glEnable(GL_BLEND);
 }
 
-//desenha um quadrado de lado quadsize ou 10 e normal x=1, y=2, z=3
+//desenha um quadrado de lado quadsize  e normal x=1, y=2, z=3
 void quad(int normal,int size,int texture)
 {
-    if(texture ==1)    //alterado
+    GLint i,j;
+    float med_dim=(float)floor_dim/2;
+    if(texture ==1)  /*se for para aplicar textura*/
     {
-        float med_dim=(float)floor_dim/2;
         glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D,tex[0]);
+        if(level==0)
+        {
+            glBindTexture(GL_TEXTURE_2D,tex[0]);
+        }
+        else if(level == 1)
+        {    
+            glBindTexture(GL_TEXTURE_2D,tex[2]);
+        }
+        else
+        {
+            glBindTexture(GL_TEXTURE_2D,tex[4]);
+        }    
         glPushMatrix();
         glBegin(GL_QUADS);
         for (int i=0;i<floor_dim*5;i++)
@@ -187,221 +327,188 @@ void quad(int normal,int size,int texture)
         glDisable(GL_TEXTURE_2D);
     }
     else
-    {
+    {    
         glBegin(GL_QUADS);
-        switch(normal)
-        {
-            case 1:
-                glNormal3f(1, 0, 0); // defini��o da normal ao pol�gono 
-                break;
-            case 2:
-                glNormal3f(0, 1, 0); // defini��o da normal ao pol�gono 
-                break;
-            case 3:
-                glNormal3f(0, 0, 1); // defini��o da normal ao pol�gono 
-                break;
+        for (i=0;i<floor_dim*multiplier;i++)
+        {   
+            for (j=0;j<floor_dim*multiplier;j++)
+            {   
+                switch(normal)
+                {
+                    case 1:
+                        glNormal3f(1, 0, 0); // definição da normal ao polígono 
+                        break;
+                    case 2:
+                        glNormal3f(0, 1, 0); // definição da normal ao polígono 
+                        break;
+                    case 3:
+                        glNormal3f(0, 0, 1); // definição da normal ao polígono 
+                        break;
+                }
+                glVertex3d((float)j/med_dim,0,(float)i/med_dim); //r[0]
+                glVertex3d((float)(j+1)/med_dim,0,(float)i/med_dim); // r[1]
+                glVertex3d((float)(j+1)/med_dim,0,(float)(i+1)/med_dim);
+                glVertex3d((float)j/med_dim,0,(float)(i+1)/med_dim);
+            }
         }
-        if(!size)
+        glEnd();
+    }
+}
+
+void draw_troncos(GLint k,GLint level)
+{
+    if(level ==0)
+    {    
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D,tex[1]);	
+    }
+    else if(level ==1)
+    {   
+        glEnable(GL_TEXTURE_2D);
+        glColor4f(GRAY2);
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE); // blending + textura
+        glBindTexture(GL_TEXTURE_2D,tex[3]);   
+    }
+    else
+    {
+        if(ascendente == 1)
         {
-            glVertex3d(0, 0, 0);
-            glVertex3d(quadsize, 0, 0);
-            glVertex3d(quadsize, quadsize, 0);
-            glVertex3d(0, quadsize, 0);
+            if(lvl3_colors[k][3]<0.5)
+            {
+                lvl3_colors[k][3]+=0.0005;            
+            }
+            else
+            {
+                lvl3_colors[k][3]+=0.001; 
+            }   
+            if(lvl3_colors[k][3]>1.0)
+            {
+                ascendente = 0;
+            }
         }
         else
         {
-            glVertex3d(0, 0, 0);
-            glVertex3d(10, 0, 0);
-            glVertex3d(10, 10, 0);
-            glVertex3d(0, 10, 0);
-        }
-    glEnd();
-    }
-}
-
-
-//desenha um quadrado de lado quadsize  e normal x=1, y=2, z=3
-void quad2(int normal,int size){
-
-    GLint i,j;
-    float med_dim=(float)floor_dim/2;
-
-    glBegin(GL_QUADS);
-    
-    for (i=0;i<floor_dim*multiplier;i++)
-    {   
-        for (j=0;j<floor_dim*multiplier;j++)
-        {
-        
-            switch(normal)
+            lvl3_colors[k][3]-=0.001;
+            if(lvl3_colors[k][3]<0.0)
             {
-                case 1:
-                    glNormal3f(1, 0, 0); // definição da normal ao polígono 
-                    break;
-                case 2:
-                    glNormal3f(0, 1, 0); // definição da normal ao polígono 
-                    break;
-                case 3:
-                    glNormal3f(0, 0, 1); // definição da normal ao polígono 
-                    break;
+                ascendente = 1;
             }
-            
-            glVertex3d((float)j/med_dim,0,(float)i/med_dim); //r[0]
-            glVertex3d((float)(j+1)/med_dim,0,(float)i/med_dim); // r[1]
-            glVertex3d((float)(j+1)/med_dim,0,(float)(i+1)/med_dim);
-            glVertex3d((float)j/med_dim,0,(float)(i+1)/med_dim);
         }
+        glColor4f(lvl3_colors[k][0],lvl3_colors[k][1],lvl3_colors[k][2],lvl3_colors[k][3]);
     }
-
-    glEnd();
-
-}
-
-void draw_troncos(GLint k)
-{
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D,tex[1]);	
-	glPushMatrix();		
-		glTranslatef(troncoPos[k][0],troncoPos[k][1],troncoPos[k][2]);
-		glRotatef (troncoRot[k][0],troncoRot[k][1],troncoRot[k][2],troncoRot[k][3]);
+    glPushMatrix();	
+        /*desenho do cilindro*/	
+		glTranslatef(levels[level].troncoPos[k][0],levels[level].troncoPos[k][1],levels[level].troncoPos[k][2]);
+		glRotatef (levels[level].troncoRot[k][0],levels[level].troncoRot[k][1],levels[level].troncoRot[k][2],levels[level].troncoRot[k][3]);
 		GLUquadricObj*  y = gluNewQuadric( );		
 		gluQuadricDrawStyle(y, GLU_FILL);			
 		gluQuadricNormals(y, GLU_SMOOTH);   		
 		gluQuadricTexture(y,GL_TRUE);				
-		gluCylinder(y,troncoDim[k][0],troncoDim[k][1],troncoDim[k][2],32,32);
-		glTranslatef(0,0,troncoDim[k][2]);
-		gluDisk(y, 0.0, diskRadius[k], 32, 32);			
+		gluCylinder(y,levels[level].troncoDim[k][0],levels[level].troncoDim[k][1],levels[level].troncoDim[k][2],32,32);
+		/*desenho dos discos que tapam a extremidades do cilindro*/   
+        gluDisk(y, 0.0, levels[level].diskRadius[k], 32, 32);
+		glTranslatef(0,0,levels[level].troncoDim[k][2]);
+		gluDisk(y, 0.0, levels[level].diskRadius[k], 32, 32);			
 		gluDeleteQuadric(y);						
 	glPopMatrix();
 	glDisable(GL_TEXTURE_2D);
 }
 
 
-void drawScene(){
+void draw_level(GLint level)
+{
+    for(int k =0;k<levels[level].n_troncos;k++)
+        draw_troncos(k,level);
+    /*desenho do tunel*/  
+    if(level ==0)
+    {    
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D,tex[1]);    
+    }
+    else if(level ==1)
+    {   
+        glEnable(GL_TEXTURE_2D);
+        glColor4f(GRAY2);
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE); // blending + textura
+        glBindTexture(GL_TEXTURE_2D,tex[3]);   
+    }    
+    glPushMatrix();     
+        glTranslatef(levels[level].tunelPos[0],levels[level].tunelPos[1],levels[level].tunelPos[2]);
+        GLUquadricObj*  y = gluNewQuadric( );       
+        gluQuadricDrawStyle(y, GLU_FILL);           
+        gluQuadricNormals(y, GLU_SMOOTH);           
+        gluQuadricTexture(y,GL_TRUE);               
+        gluCylinder(y,levels[level].tunelDim[0],levels[level].tunelDim[1],levels[level].tunelDim[2],32,32);       
+        gluDeleteQuadric(y);                        
+    glPopMatrix();
+    glDisable(GL_TEXTURE_2D);
+}
+
+
+void drawScene()
+{
 	
 	//============================================Eixos
 	if (noite)
 		glColor4f(AMARELO);
 	else
 		glColor4f(BLACK);
-	
-    if(eixos)
-    {
-    
-        glColor4f(VERDE);
 
-        glBegin(GL_LINES);                      
-            glVertex3i(0,0,-xC); 
-            glVertex3i(0,0, xC);        
-        glEnd();
-        glBegin(GL_LINES);                      
-            glVertex3i(0,-xC,0); 
-            glVertex3i(0,xC,0);         
-        glEnd();
-        glBegin(GL_LINES);                      
-            glVertex3i(-xC,0,0); 
-            glVertex3i( xC,0,0);        
-        glEnd();
-
-        //eixos para o plano
-        glBegin(GL_LINES);  //z=5                    
-            glVertex3i(-xC,0,5); 
-            glVertex3i( xC,0,5);        
-        glEnd();
-
-        glBegin(GL_LINES); //z=10                     
-            glVertex3i(-xC,0,10); 
-            glVertex3i( xC,0,10);        
-        glEnd();
-
-        glBegin(GL_LINES); //x=5                     
-            glVertex3i(5,0,-xC); 
-            glVertex3i(5,0,xC);        
-        glEnd();
-
-        glBegin(GL_LINES); //x=5                     
-            glVertex3i(10,0,-xC); 
-            glVertex3i(10,0,xC);        
-        glEnd();
-
-    }
-    
-	glEnable(GL_COLOR_MATERIAL);
-	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE ); 
+    glColor4f(WHITE); //fazer reset as cores para o blend + texturas
+    /*desenho da caixa*/
 
     //plano de baixo(chao)
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D,tex[0]);
     glPushMatrix();
         quad(2,1,1);
     glPopMatrix();
-    glDisable(GL_TEXTURE_2D);
   
     //atras
      glPushMatrix();
-        glColor4f(VERMELHO);
+        glColor4f(WHITE);
         glTranslatef(3, 0, 3);
         glRotatef(-90,1,0,0);   
-        quad2(2,0);
+        quad(2,0,0);
     glPopMatrix();
 
     //cima
     glPushMatrix();
-        glColor4f(AZUL);
+        glColor4f(WHITE);
         glTranslatef(3, .001, 3);
-        quad2(2,0);
+        quad(2,0,0);
     glPopMatrix();
 
     //contrario a bola
      glPushMatrix();
-        glColor4f(AZUL);
+        glColor4f(WHITE);
         glTranslatef(3+multiplier*2, 0, 3+multiplier*2);
         glRotatef(180,0,1,0); //para a reflexao ficar na face exterior da caixa, senão ficava interior
-        glRotatef(90,0,0,1); //torno do z
-        quad2(2,0);//pode estar mal
+        glRotatef(90,0,0,1); 
+        quad(2,0,0);
     glPopMatrix();
     
     //em cima
    glPushMatrix();
-        glColor4f(AZUL);
+        glColor4f(WHITE);
         glTranslatef(3, multiplier*2, 3);   
-        quad2(2,0);//pode estar mal
+        quad(2,0,0);
     glPopMatrix();
 
     //lado da bola
     glPushMatrix();
-        glColor4f(AZUL);
+        glColor4f(WHITE);
         glTranslatef(3, 0, 3);
         glRotatef(90,0,0,1); 
-        quad2(2,0);//pode estar mal
+        quad(2,0,0);
     glPopMatrix();
 
-    //troncos
-    for(int k =0;k<N_TRONCOS;k++)
-    	draw_troncos(k);
- 	//tunel
-    glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D,tex[1]);	
-	glPushMatrix();		
-		glTranslatef(6.8,0.2,5.8);
-		GLUquadricObj*  y = gluNewQuadric( );		
-		gluQuadricDrawStyle(y, GLU_FILL);			
-		gluQuadricNormals(y, GLU_SMOOTH);   		
-		gluQuadricTexture(y,GL_TRUE);				
-		gluCylinder(y,0.2,0.2,1,32,32);			
-		gluDeleteQuadric(y);						
-	glPopMatrix();
-	glDisable(GL_TEXTURE_2D);
-
-
- 	//bola
+    /* desenho do nivel */
+    draw_level(level);
+    /* desenho da bola */
     glPushMatrix();
         glColor4f(AMARELO);
         glTranslatef(posEsfera[0],posEsfera[1],posEsfera[2]);
         glutSolidSphere(raioEsfera, 256, 256);//radius , (slices(longitude), stacks(latitude))->malhas
     glPopMatrix();
-
-    
    	glutPostRedisplay();
 }
 
@@ -437,74 +544,85 @@ void iluminacao()
     glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, focoDir);
 }
 
-void drawOrientacao()
-{
-	glPushMatrix();
-		glColor4f(VERDE);
-		glTranslatef (obsPini[0],obsPini[1],obsPini[2]);		
-		glutSolidCube(0.75);
-	glPopMatrix();
-
-	glPushMatrix();
-		glColor4f(LARANJA);
-		glTranslatef (obsPfin[0],obsPfin[1],obsPfin[2]);		
-		glutSolidCube(0.5);
-	glPopMatrix();
-	/* Direccao do FOCO=lanterna */
-	glPushMatrix();
-        glColor4f(VERMELHO);
-        glTranslatef(focoPfin[0], focoPfin[1], focoPfin[2]);
-        glutSolidCube(0.25);
-    glPopMatrix();
-}	
 
 void display(void)
 {
 	if (noite)
-		glClearColor(GRAY1);//valor de limpeza para os buffers
+		glClearColor(GRAY1);
 	else
 		glClearColor(GRAY2);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    if(end_game == 0)
+	{
+        //================================================================= Viewport1
+        glViewport (0, hScreen/4, wScreen/4, hScreen/4);
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho (-xC,xC, -xC,xC, -zC,zC);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();	
+        gluLookAt( 0, 10,0, 0,0,0, 0, 0, -1);
+	   //--------------------- Informacao
+        sprintf(texto,"Nivel : %d",level+1);
+        desenhaTexto(texto,-8,1,0,18);
+        if(clock_active ==1)
+        {    
+            t2 = clock() - t1;
+            sprintf(texto,"Tempo : %.2f",((float)t2)/CLOCKS_PER_SEC);
+            desenhaTexto(texto,-8,1,4,12);
+        }
+        if(noite)
+            strcpy(texto, "Noite : Activo\n");
+        else
+            strcpy(texto, "Noite : Inactivo\n");
+        desenhaTexto(texto,-8,1,8,12);
+        if(ligaLuz)
+            strcpy(texto, "Luz tecto : Activo\n");
+        else
+            strcpy(texto, "Luz tecto : Inactivo\n");
+        desenhaTexto(texto,-8,1,12,12);
+        if(ligaFoco)
+            strcpy(texto, "Luz foco : Activo\n");
+        else
+            strcpy(texto, "Luz foco : Inactivo\n");
+        desenhaTexto(texto,-8,1,16,12);
 
-	//================================================================= Viewport1 (x,y,width,height)
-	glViewport (0, hScreen/4, wScreen/4, hScreen/4);
-  	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho (-xC,xC, -xC,xC, -zC,zC);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();	
-	gluLookAt( 0, 10,0, 0,0,0, 0, 0, -1);
-	/* desenha objectos */
-	iluminacao();
-	drawScene(); 
-	drawOrientacao(); 
-	//--------------------- Informacao
-	glColor3f(1,0,0);
-	sprintf(texto, "%d - Noite", noite);
-	desenhaTexto(texto,-12,1,-6);
-	sprintf(texto, "%d - Tecto", ligaLuz);
-	desenhaTexto(texto,-12,1,-9);
-	sprintf(texto, "%d - Foco", ligaFoco);
-	desenhaTexto(texto,-12,1,-12);
-    sprintf(texto, "%d - Eixos ", eixos);
-    desenhaTexto(texto,-12,1,-3);
-
-	//================================================================= Viewport2
-	glEnable(GL_LIGHTING);  
-	glViewport (wScreen/4, hScreen/4, 0.75*wScreen, 0.75*hScreen);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(99.0, wScreen/hScreen, 0.1, 100.0);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	gluLookAt(obsPini[0], obsPini[1], obsPini[2], obsPfin[0], obsPfin[1], obsPfin[2], 0, 1, 0);
-	
-	/* desenha objectos */
-	iluminacao();
-	drawScene();
-	glutSwapBuffers();
+	   //================================================================= Viewport2
+	   glEnable(GL_LIGHTING);  
+	   glViewport (wScreen/4, hScreen/4, 0.75*wScreen, 0.75*hScreen);
+	   glMatrixMode(GL_PROJECTION);
+	   glLoadIdentity();
+	   gluPerspective(99.0, wScreen/hScreen, 0.1, 100.0);
+	   glMatrixMode(GL_MODELVIEW);
+	   glLoadIdentity();
+	   gluLookAt(obsPini[0], obsPini[1], obsPini[2], obsPfin[0], obsPfin[1], obsPfin[2], 0, 1, 0);
+	   /* desenha objectos */
+	   iluminacao();
+	   drawScene();
+       glutSwapBuffers();
+    }
+    else
+    {   
+        glViewport (0, 0, wScreen, hScreen);
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho (-xC,xC, -xC,xC, -zC,zC);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();   
+        gluLookAt( 0, 10,0, 0,0,0, 0, 0, -1);
+        strcpy(texto,"FIM");
+        desenhaTexto(texto,0,0,-8,24);
+        sprintf(texto,"Tempo Nivel 1 : %.2f",((float)level_time[0])/CLOCKS_PER_SEC);
+        desenhaTexto(texto,-8,0,-4,24);
+        sprintf(texto,"Tempo Nivel 2 : %.2f",((float)level_time[1])/CLOCKS_PER_SEC);
+        desenhaTexto(texto,-8,0,0,24);
+        sprintf(texto,"Tempo Nivel 3 : %.2f",((float)level_time[2])/CLOCKS_PER_SEC);
+        desenhaTexto(texto,-8,0,4,24);
+        strcpy(texto,"Pressione ESC para sair");
+        desenhaTexto(texto,-4,0,8,24);
+        glutSwapBuffers();
+    }
 }
-
 
 void updateVisao()
 {
@@ -520,64 +638,113 @@ void updateVisao()
     glutPostRedisplay();
 }
 
-int check_colisions(GLfloat ball_x,GLfloat ball_y,GLfloat ball_z)
-{	
-	for(int i=0;i<N_TRONCOS;i++)
+/*saber se a bola se encontra dentro do labirinto, se o jogo esta a decorrer*/
+void game_on()
+{
+	if(posEsfera[2]> CUBO_INI && posEsfera[2] < CUBO_FIM && posEsfera[0] >CUBO_INI && posEsfera[0] < CUBO_FIM) //se esta dentro da caixa
 	{
-		if(troncoRot[i][2] ==1)	// ---
+		if(posEsfera[0]> levels[level].level_entrance[0] && posEsfera[0]< levels[level].level_entrance[1]  && entrance ==0)	// se a entrada na caixa foi pela entrada que nao a do tunel
 		{
-			if(ball_x + raioEsfera > troncoPos[i][0] && ball_x-raioEsfera < troncoPos[i][0] + troncoDim[i][2])
-			{
-				if(ball_z+raioEsfera > troncoPos[i][2]-troncoDim[i][0] && ball_z-raioEsfera < troncoPos[i][2]+troncoDim[i][0])
-				{
-					return 1;
-				}
+            if(clock_active ==0) 
+            {
+                t1 = clock();
+                clock_active = 1;
 			}
+            entrance = posEsfera[0];
 		}
-		if(troncoRot[i][3] ==1) //  |
+		if(entrance >levels[level].level_entrance[0]  && entrance< levels[level].level_entrance[1] && posEsfera[0] >= levels[level].level_exit[0] && posEsfera[0] <= levels[level].level_exit[1] && posEsfera[2] >= levels[level].level_exit[2] && posEsfera[2] <= levels[level].level_exit[3])
 		{
-			if(ball_x + raioEsfera  > troncoPos[i][0]-troncoDim[i][0] && ball_x-raioEsfera < troncoPos[i][0] + troncoDim[i][0])
-			{
-				if(ball_z+raioEsfera > troncoPos[i][2]-troncoDim[i][0] && ball_z-raioEsfera < troncoPos[i][2]+troncoDim[i][2])
-				{
-					return 1;
-				}
-			}
+            level_time[level] = clock() - t1;
+            level++;
+            clock_active = 0;
+            posEsfera[0] = 5;posEsfera[1]= raioEsfera;posEsfera[2]= 8;
+            if(level == 3)
+            {
+                end_game = 1;
+            }
 		}
 	}
-	//check cube walls collisions
-	if(ball_z>3 && ball_z < 7 && ball_x >3 && ball_x <7)
+	else	// se nao esta dentro da caixa, faz reset a entrance
 	{
-		if(ball_z < 3 + raioEsfera)
+		entrance = 0;
+	}
+}
+
+/*percorrer todos os obstaculos do nivel actual para detectar colisoes*/
+int check_colisions(GLfloat ball_x,GLfloat ball_y,GLfloat ball_z)
+{	
+	for(int i=0;i<levels[level].n_troncos;i++)
+	{
+		if(levels[level].troncoRot[i][2] ==1)	/* ---(rotaçao segundo y)*/
+		{
+			if( (ball_x + raioEsfera > levels[level].troncoPos[i][0]) && (ball_x-raioEsfera < levels[level].troncoPos[i][0] + levels[level].troncoDim[i][2]))
+			{
+				if((ball_z+raioEsfera > levels[level].troncoPos[i][2]-levels[level].troncoDim[i][0]) && (ball_z-raioEsfera < levels[level].troncoPos[i][2]+levels[level].troncoDim[i][0]))
+				{
+					return 1;
+				}
+			}
+		}
+		if(levels[level].troncoRot[i][3] ==1) /*  | (rotaçao segundo z)*/
+		{
+			if((ball_x + raioEsfera  > levels[level].troncoPos[i][0]-levels[level].troncoDim[i][0]) && (ball_x-raioEsfera < levels[level].troncoPos[i][0] + levels[level].troncoDim[i][0]))
+			{
+				if((ball_z+raioEsfera > levels[level].troncoPos[i][2]-levels[level].troncoDim[i][0]) && (ball_z-raioEsfera < levels[level].troncoPos[i][2]+levels[level].troncoDim[i][2]))
+				{
+					return 1;
+				}
+			}
+		}
+        if(levels[level].troncoRot[i][1] ==1) /* ^^ |(rotaçao segundo x)*/
+        {
+            if((ball_z+raioEsfera > levels[level].troncoPos[i][2]-levels[level].troncoDim[i][0]) && (ball_z-raioEsfera < levels[level].troncoPos[i][2]+levels[level].troncoDim[i][0]))
+            {
+                if((ball_x+raioEsfera > levels[level].troncoPos[i][0]-levels[level].troncoDim[i][0]) && (ball_x-raioEsfera < levels[level].troncoPos[i][0]+levels[level].troncoDim[i][0]))
+                {
+
+                    return 1;
+                }
+            }
+        } 
+	}
+	/*detecçao de colisoes com as paredes da caixa*/
+	if(ball_z> CUBO_INI && ball_z < CUBO_FIM && ball_x >CUBO_INI && ball_x <CUBO_FIM) /*se dentro da caixa*/
+	{
+		if(ball_z < CUBO_INI + raioEsfera)
 		{
 			return 1;
 		}
-		if(ball_x < 3 + raioEsfera)
+		if(ball_x < CUBO_INI + raioEsfera)
 		{
 			return 1;
 		}
-		if(ball_x > 7 - raioEsfera)
+		if(ball_x > CUBO_FIM - raioEsfera)
 		{
 			return 1;
+		}
+	}
+	else	
+	{
+		if(ball_z>= CUBO_INI && ball_z <= CUBO_FIM)
+		{
+			if(ball_x + raioEsfera >= CUBO_INI && ball_x+raioEsfera <= CUBO_INI+raioEsfera)
+			{
+				return 1;
+			}
+			if(ball_x - raioEsfera <= CUBO_FIM && ball_x - raioEsfera >= CUBO_FIM-raioEsfera )
+			{
+				return 1;
+			}
 		}
 	}
 	return 0;
 }
 
-//======================================================= EVENTOS
+//======================================================= EVENTOS-movimentaçao do foco e da bola e iluminaçao
 void keyboard(unsigned char key, int x, int y)
 {
     switch (key){
         /* -------------------- Direção da lanterna */
-        case 'A'://desacivar/activar os eixos
-        case 'a':
-            if(eixos)
-                eixos=0;
-            else
-                eixos=1;
-            updateVisao();
-            break;
-
         case 's':
         case 'S':
             incH = incH - 0.05;
@@ -644,6 +811,7 @@ void keyboard(unsigned char key, int x, int y)
         /*-----------------movimento da bola---*/
         case 'i':
         case 'I':
+        	game_on();
         	if(check_colisions(posEsfera[0],posEsfera[1],posEsfera[2]-velEsfera)==1)
         	{
         		;
@@ -659,6 +827,7 @@ void keyboard(unsigned char key, int x, int y)
         	break;
         case 'k':
         case 'K':
+        	game_on();
         	if(check_colisions(posEsfera[0],posEsfera[1],posEsfera[2]+velEsfera)==1)
         	{
         		;
@@ -674,10 +843,15 @@ void keyboard(unsigned char key, int x, int y)
         	break;
         case 'j':
         case 'J':
+        	game_on();
         	if(check_colisions(posEsfera[0]-velEsfera,posEsfera[1],posEsfera[2])==1)
         	{
         		;
-        	}
+        	} /*colisao com o tunel do nivel actual*/
+        	else if((posEsfera[2]+raioEsfera > levels[level].tunelPos[2]-levels[level].tunelDim[0]) && (posEsfera[2]-raioEsfera < levels[level].tunelPos[2]+levels[level].tunelDim[2]) && (posEsfera[0]-velEsfera-raioEsfera > levels[level].tunelPos[0]-levels[level].tunelDim[0]) && (posEsfera[0]-velEsfera-raioEsfera <levels[level].tunelPos[0]+levels[level].tunelDim[0] ))  
+			{
+				;
+			}
         	else
         	{
         		posEsfera[0]-= velEsfera;
@@ -689,10 +863,15 @@ void keyboard(unsigned char key, int x, int y)
         	break;
         case 'l':
         case 'L':
+        	game_on();
         	if(check_colisions(posEsfera[0]+velEsfera,posEsfera[1],posEsfera[2])==1)
         	{
         		;
-        	}
+        	} /*colisao com o tunel do nivel actual*/
+        	else if((posEsfera[2]+raioEsfera > levels[level].tunelPos[2]-levels[level].tunelDim[0]) && (posEsfera[2]-raioEsfera < levels[level].tunelPos[2]+levels[level].tunelDim[2]) && (posEsfera[0]+velEsfera+raioEsfera  > levels[level].tunelPos[0]-levels[level].tunelDim[0]) && (posEsfera[0]+velEsfera-raioEsfera < levels[level].tunelPos[0]+levels[level].tunelDim[0]))
+			{
+				;
+			}
         	else
         	{
         		posEsfera[0]+= velEsfera;
@@ -709,13 +888,13 @@ void keyboard(unsigned char key, int x, int y)
     }
 }
 
-
+/*movimentaçao do observador e do foco*/
 void teclasNotAscii(int key, int x, int y)
 {
     if(key == GLUT_KEY_UP) 
     {
-		obsPini[0]=obsPini[0]+incVisao*cos(aVisao); //*cos(aVisao)
-		obsPini[2]=obsPini[2]-incVisao*sin(aVisao); //sin(aVisao)
+		obsPini[0]=obsPini[0]+incVisao*cos(aVisao); 
+		obsPini[2]=obsPini[2]-incVisao*sin(aVisao); 
 	}
 	if(key == GLUT_KEY_DOWN) 
 	{
@@ -743,8 +922,7 @@ int main(int argc, char** argv){
 	glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH );
 	glutInitWindowSize (wScreen, hScreen); 
 	glutInitWindowPosition (400, 400); 
-	glutCreateWindow ("Projecto CG(left,right,up,down) - (N,T,F,M) - (s,d-e,c) a->eixos");
-  
+	glutCreateWindow ("Projecto CG");  /*falta por as teclas certas*/  
 	init();
 	glutSpecialFunc(teclasNotAscii); 
 	glutReshapeFunc(resize);
@@ -753,30 +931,6 @@ int main(int argc, char** argv){
 	glutMainLoop();
 	return 0;
 }
-
-
-
-
-/*
-
-1-> objectos            //falta o plano de baixo
-->visita guiada
-
-reflexoe 
-
-
-2->cores e texturas
-3->reflexoes
-4->transparencias
-
-
-
-reflexoes no cubo e meter resto das merdas ok
-
-
-
-
-*/
 
 
 
