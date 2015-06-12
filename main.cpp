@@ -29,7 +29,7 @@
 #define N_TRONCOS3 30
 #define CUBO_INI 3
 #define CUBO_FIM 7
-#define N_TEX 5
+#define N_TEX 6
 
 //===========================================================Variaveis e constantes
 
@@ -63,7 +63,7 @@ GLfloat  obsPfin[] ={obsPini[0]-rVisao*cos(aVisao), obsPini[1], obsPini[2]-rVisa
 GLint   noite=1;
 GLfloat luzGlobalCor[4]={1.0,1.0,1.0,1.0};   
 /*Lampada tecto(ambiente local)*/
-GLint ligaLuz = 0;
+GLint ligaLuz = 1;
 GLfloat localPos[4] = {xC/2, 10.0, xC/2, 1.0}; 			/* posição da fonte de luz */
 GLfloat localCor[4] = {0.1, 0.1, 0.1, 1.0}; 			/* intensidade da cor */
 GLfloat localAttCon = 1.0; 								/* atenuação atmosféria C (constante) */
@@ -97,7 +97,8 @@ RgbImage imag;
 GLint quadsize=1;
 GLint multiplier=5/2;
 GLint floor_dim= 32; //numero divisoes da grelha
-
+GLint floorsize=5;
+GLint defaultReflectionSize=2;
 //…………………………………………………………………………………………………………………………………………… labirinto	
 Level levels[3];                                        /*estruturas com todas as informaçoes de cada nivel*/
 GLint level = 0;                                        /* 0, 1 e 2 */
@@ -174,7 +175,7 @@ void init_levels()
 void initLights(void)
 {
 	/*Ambiente*/
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzGlobalCor);
+	//glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzGlobalCor);
     /* Teto */
     glLightfv(GL_LIGHT0, GL_POSITION, localPos);
     glLightfv(GL_LIGHT0, GL_AMBIENT, localCor);
@@ -193,6 +194,18 @@ void initLights(void)
 
 void criaDefineTexturas()
 {
+
+    //textura com o blend activado, tem de ser a primeira a ser carregada senão o resto fica com uma cor esquesita
+    glGenTextures(1, &tex[5]);
+    glBindTexture(GL_TEXTURE_2D, tex[5]);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    imag.LoadBmpFile("mirror.bmp");
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, imag.GetNumCols(),imag.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,imag.ImageData());
+
     //----------------------------------------- Chao y=0 nivel 1
     glGenTextures(1, &tex[0]);
     glBindTexture(GL_TEXTURE_2D, tex[0]);
@@ -243,6 +256,8 @@ void criaDefineTexturas()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     imag.LoadBmpFile("futuristic.bmp");
     glTexImage2D(GL_TEXTURE_2D, 0, 3, imag.GetNumCols(),imag.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,imag.ImageData());
+
+
 }
 
 void init(void)
@@ -286,7 +301,7 @@ void desenhaTexto(char *string, GLfloat x, GLfloat y, GLfloat z,GLint size)
 }
 
 //desenha um quadrado de lado quadsize  e normal x=1, y=2, z=3
-void quad(int normal,int size,int texture)
+void quad(int normal,int size,int texture, int teste)
 {
     GLint i,j;
     float med_dim=(float)floor_dim/2;
@@ -307,21 +322,29 @@ void quad(int normal,int size,int texture)
         }    
         glPushMatrix();
         glBegin(GL_QUADS);
-        for (int i=0;i<floor_dim*5;i++)
+
+        for (int i=0;i<floor_dim*floorsize;i++)//preenche para z maior
         {   
-            for (int j=0;j<floor_dim*5;j++)
+            for (int j=0;j<floor_dim*floorsize;j++)//preenche para x maior
             {
                 glNormal3f(0,1,0);
-                glTexCoord2f((float)j/floor_dim,(float)i/floor_dim);
-                glVertex3d((float)j/med_dim,0,(float)i/med_dim); 
-                glTexCoord2f((float)(j+1)/floor_dim,(float)i/floor_dim);
-                glVertex3d((float)(j+1)/med_dim,0,(float)i/med_dim);    
+                glTexCoord2f((float)j/floor_dim,(float)i/floor_dim);              
+                glVertex3d((float)j/med_dim,0,(float)i/med_dim);                
+                glTexCoord2f((float)(j+1)/floor_dim,(float)i/floor_dim);              
+                glVertex3d((float)(j+1)/med_dim,0,(float)i/med_dim);                    
                 glTexCoord2f((float)(j+1)/floor_dim,(float)(i+1)/floor_dim);
-                glVertex3d((float)(j+1)/med_dim,0,(float)(i+1)/med_dim);
+                glVertex3d((float)(j+1)/med_dim,0,(float)(i+1)/med_dim);          
                 glTexCoord2f((float)j/floor_dim,(float)(i+1)/floor_dim);
                 glVertex3d((float)j/med_dim,0,(float)(i+1)/med_dim);
+
+                if(teste==2 && j==31)
+                break;
             }
+            if(teste==1 && i==31)
+                break;
+           
         }
+
         glEnd();
         glPopMatrix();
         glDisable(GL_TEXTURE_2D);
@@ -444,10 +467,173 @@ void draw_level(GLint level)
     glDisable(GL_TEXTURE_2D);
 }
 
+void quadradito(){
+
+    //atras
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D,tex[0]);
+    glPushMatrix();
+        glColor4f(VERMELHO);
+        glNormal3f(0,0,1); 
+       
+        glTranslatef(3, 0, 3);
+        glRotatef(-90,1,0,0);
+        glBegin(GL_QUADS); 
+            glTexCoord2f(0,0); 
+            glVertex3d(0,0,0);
+
+            glTexCoord2f(0,1); 
+            glVertex3d(5,0,0);
+        
+            glTexCoord2f(1,0);
+            glVertex3d(5,0,5);
+
+            glTexCoord2f(1,1);
+            glVertex3d(0,0,5);  
+        glEnd();
+    glPopMatrix();
+
+}
+
+void  drawReflectionPanel(int x,int z, int position){
+
+    //desenha o painel reflector e
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D,tex[5]);
+    glPushMatrix();
+        
+        if(x>=0){
+            glTranslatef(x,0,position);
+            glRotatef(270,1,0,0);
+        }
+        else{
+
+            glTranslatef(z,0,position);
+            glRotatef(-270,0,0,1);
+        }
+
+        glBegin(GL_QUADS);
+
+        if(x>=0)
+            glNormal3f(0, 0, 1);//se estiver a desenhar em x a normal é em Z
+        else
+            glNormal3f(1, 0, 0);//se não é em Z
+        
+        glTexCoord2f(0,0);
+        glVertex3d(0, 0, 0);
+                        
+        glTexCoord2f(0,1);
+        glVertex3d(2, 0, 0);
+                            
+        glTexCoord2f(1,1);
+        glVertex3d(2, 0, 2);
+                        
+        glTexCoord2f(1,0);
+        glVertex3d(0, 0, 2);
+        glEnd();
+        
+    glPopMatrix();
+    glDisable(GL_TEXTURE_2D);
+
+
+}
+void drawEdges(){
+
+
+    int flag=0;
+
+    //desenha os planos em z
+    for(int i=0;i<10;i+=2){
+
+        drawReflectionPanel(i,0,0);//desenha z=0
+        drawReflectionPanel(i,0,10);//z=10
+
+        drawReflectionPanel(-1,0,i);//desenha z=0
+        drawReflectionPanel(-1,10,i);//desenha z=0
+
+    }
+
+}
+
+
+void reflection(){
+
+    glPushMatrix();
+        //glRotatef(-90,1,0,0);
+        quad(2,1,1,0);
+    glPopMatrix();
+
+    //REFLEXÃO 
+    //1. Activa o uso do stencil buffer
+    glEnable(GL_STENCIL_TEST);
+    //2. Nao escreve no color buffer - desativar
+    glColorMask(GL_FALSE, GL_FALSE,GL_FALSE, GL_FALSE);
+    //3. Torna inactivo o teste de profundidade                                                 
+    glDisable(GL_DEPTH_TEST);
+    //4. Coloca a 1 todos os pixels no stencil buffer que representam o chão. A combinaçao desenhaChao + StencilFunc + StencilOp e que me da a mascara. A area de desenho, que vai ser colocada  1, e dada pelo desenhaChao.
+    glStencilFunc(GL_ALWAYS, 1, 1);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    //5. Desenhar o quadrado
+    drawEdges();
+    //6. Activa a escrita de cor                                                                
+    glColorMask(1, 1, 1, 1);
+    //7. Activa o teste de profundidade                                                         
+    glEnable(GL_DEPTH_TEST);
+    //8. O stencil test passa apenas quando o pixel tem o valor 1 no stencil buffer             
+    glStencilFunc(GL_EQUAL, 1, 1);
+    //9. Stencil buffer read-only
+    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+    //10. Desenha o objecto com a reflexão onde stencil buffer é 1
+    
+    //para z=0 e z=10
+    glPushMatrix();
+        glTranslatef(0, 0, -0.001);
+        glRotatef(-90,1,0,0);
+        glScalef(1,-1,1);
+        quad(2,1,1,1);
+    glPopMatrix();
+
+    glPushMatrix();
+        glTranslatef(0, 2, 10.001);
+        glRotatef(90,1,0,0);
+        
+        glScalef(1,-1,1);
+        quad(2,1,1,1);
+    glPopMatrix();
+    //----------------------------
+    
+    //para x=0 e x=10
+    glPushMatrix();
+        glTranslatef(-0.001, 0,0);
+        glRotatef(90,0,0,1);
+        glScalef(1,-1,1);
+        quad(2,1,1,2);
+    glPopMatrix();
+
+    glPushMatrix();
+        glTranslatef(10.001, 2,0);
+        glRotatef(270,0,0,1);
+        glScalef(1,-1,1);
+        quad(2,1,1,2);
+    glPopMatrix();
+
+    
+    //11. Desactiva a utilização do stencil buffer
+    glDisable(GL_STENCIL_TEST);
+    // isto aplica a textura ao chao Blending
+    glEnable(GL_BLEND);
+    glColor4f(1, 1, 1, 0.3);
+    drawEdges();
+    glDisable(GL_BLEND);
+}
 
 void drawScene()
 {
 	
+    
+    reflection();
+
+
 	//============================================Eixos
 	if (noite)
 		glColor4f(AMARELO);
@@ -457,24 +643,31 @@ void drawScene()
     glColor4f(WHITE); //fazer reset as cores para o blend + texturas
     /*desenho da caixa*/
 
-    //plano de baixo(chao)
+    /*/plano de baixo(chao)
     glPushMatrix();
+        glTranslatef(0,0,1);
+        glRotatef(-90,1,0,0);
         quad(2,1,1);
     glPopMatrix();
-  
+    
+//*/
+
     //atras
      glPushMatrix();
         glColor4f(WHITE);
         glTranslatef(3, 0, 3);
-        glRotatef(-90,1,0,0);   
-        quad(2,0,0);
-    glPopMatrix();
+        glRotatef(-90,1,0,0);  
 
-    //cima
+        //glBindTexture(GL_TEXTURE_2D,tex[0]); 
+        quad(2,0,0,0);
+        //glDisable(GL_TEXTURE_2D);
+    glPopMatrix();
+    
+
+    //chao
     glPushMatrix();
         glColor4f(WHITE);
         glTranslatef(3, .001, 3);
-        quad(2,0,0);
     glPopMatrix();
 
     //contrario a bola
@@ -483,14 +676,14 @@ void drawScene()
         glTranslatef(3+multiplier*2, 0, 3+multiplier*2);
         glRotatef(180,0,1,0); //para a reflexao ficar na face exterior da caixa, senão ficava interior
         glRotatef(90,0,0,1); 
-        quad(2,0,0);
+        quad(2,0,0,0);
     glPopMatrix();
     
     //em cima
    glPushMatrix();
         glColor4f(WHITE);
         glTranslatef(3, multiplier*2, 3);   
-        quad(2,0,0);
+        quad(2,0,0,0);
     glPopMatrix();
 
     //lado da bola
@@ -498,7 +691,7 @@ void drawScene()
         glColor4f(WHITE);
         glTranslatef(3, 0, 3);
         glRotatef(90,0,0,1); 
-        quad(2,0,0);
+        quad(2,0,0,0);
     glPopMatrix();
 
     /* desenho do nivel */
@@ -919,7 +1112,7 @@ void teclasNotAscii(int key, int x, int y)
 int main(int argc, char** argv){
 
 	glutInit(&argc, argv);
-	glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH );
+	glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH   | GLUT_STENCIL );
 	glutInitWindowSize (wScreen, hScreen); 
 	glutInitWindowPosition (400, 400); 
 	glutCreateWindow ("Projecto CG");  /*falta por as teclas certas*/  
