@@ -12,7 +12,12 @@
 #include "RgbImage.h"
 #include <unistd.h>
 #include <time.h>
+#include "mainquerida.h"
 
+
+
+
+<<<<<<< HEAD
 //==================================================================== Definir cores, nº de obstaculos por nivel e nº de texturas
 #define AZUL     0.0, 0.0, 1.0, 1.0
 #define VERMELHO 1.0, 0.0, 0.0, 1.0
@@ -110,6 +115,8 @@ clock_t t1,t2;
 clock_t level_time[3];
 GLint clock_active = 0;
 GLint end_game = 0;
+=======
+>>>>>>> c8c6aa07a68991aebb2eed176d5e01556efec82a
 
 //---------------------------------------------------------Niveis
 void init_levels()
@@ -265,6 +272,7 @@ void init(void)
 	glClearColor(WHITE);
     glShadeModel(GL_SMOOTH);
     glEnable(GL_COLOR_MATERIAL);
+
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE ); 
     criaDefineTexturas();
     initLights();
@@ -411,14 +419,19 @@ void draw_troncos(GLint k,GLint level)
             }
         }
         else
-        {
+        {   
+
             lvl3_colors[k][3]-=0.001;
             if(lvl3_colors[k][3]<0.0)
             {
                 ascendente = 1;
             }
         }
+<<<<<<< HEAD
         glEnable(GL_BLEND);
+=======
+        glEnable(GL_BLEND);  
+>>>>>>> c8c6aa07a68991aebb2eed176d5e01556efec82a
         glColor4f(lvl3_colors[k][0],lvl3_colors[k][1],lvl3_colors[k][2],lvl3_colors[k][3]);
     }
     glPushMatrix();	
@@ -437,7 +450,11 @@ void draw_troncos(GLint k,GLint level)
 		gluDeleteQuadric(y);						
 	glPopMatrix();
 	glDisable(GL_TEXTURE_2D);
+<<<<<<< HEAD
     glDisable(GL_BLEND);
+=======
+       glDisable(GL_BLEND);  
+>>>>>>> c8c6aa07a68991aebb2eed176d5e01556efec82a
 }
 
 
@@ -646,36 +663,18 @@ void drawScene()
     glColor4f(WHITE); //fazer reset as cores para o blend + texturas
     /*desenho da caixa*/
 
-    /*/plano de baixo(chao)
-    glPushMatrix();
-        glTranslatef(0,0,1);
-        glRotatef(-90,1,0,0);
-        quad(2,1,1);
-    glPopMatrix();
-    
-//*/
-
+    duplicates();//mesmas funcoes que abaixo para meter os paineis a reflectir por  dentro
     //atras
      glPushMatrix();
-        glColor4f(WHITE);
+        glColor4f(DEEPBLUE);
         glTranslatef(3, 0, 3);
         glRotatef(-90,1,0,0);  
-
-        //glBindTexture(GL_TEXTURE_2D,tex[0]); 
         quad(2,0,0,0);
-        //glDisable(GL_TEXTURE_2D);
-    glPopMatrix();
-    
-
-    //chao
-    glPushMatrix();
-        glColor4f(WHITE);
-        glTranslatef(3, .001, 3);
     glPopMatrix();
 
     //contrario a bola
      glPushMatrix();
-        glColor4f(WHITE);
+        glColor4f(TORRADO);
         glTranslatef(3+multiplier*2, 0, 3+multiplier*2);
         glRotatef(180,0,1,0); //para a reflexao ficar na face exterior da caixa, senão ficava interior
         glRotatef(90,0,0,1); 
@@ -684,14 +683,14 @@ void drawScene()
     
     //em cima
    glPushMatrix();
-        glColor4f(WHITE);
+        glColor4f(SBLUE);
         glTranslatef(3, multiplier*2, 3);   
         quad(2,0,0,0);
     glPopMatrix();
 
     //lado da bola
     glPushMatrix();
-        glColor4f(WHITE);
+        glColor4f(TORRADO);
         glTranslatef(3, 0, 3);
         glRotatef(90,0,0,1); 
         quad(2,0,0,0);
@@ -706,6 +705,51 @@ void drawScene()
         glutSolidSphere(raioEsfera, 256, 256);//radius , (slices(longitude), stacks(latitude))->malhas
     glPopMatrix();
    	glutPostRedisplay();
+}
+
+void duplicates(){
+
+
+
+     //atras
+     glPushMatrix();
+        glColor4f(DEEPBLUE);
+        glTranslatef(3, 4, 3.001);
+        glRotatef(90,1,0,0);  
+        quad(2,0,0,0);
+    glPopMatrix();
+    
+
+    //chao
+
+
+    //contrario a bola
+     glPushMatrix();
+        glColor4f(TORRADO);
+        glTranslatef(6.999, 0, 3);
+        glRotatef(90,0,0,1); 
+        quad(2,0,0,0);
+    glPopMatrix();
+    
+    //em cima
+   glPushMatrix();
+        glColor4f(SBLUE);
+        glTranslatef(3, multiplier*1.99, 3+4);
+        //glTranslatef(0,3,0);
+        glRotatef(180,1,0,0);   
+        quad(2,0,0,0);
+    glPopMatrix();
+
+    //ladoesquerdo
+    glPushMatrix();
+        glColor4f(TORRADO);
+        glTranslatef(3.001, 4, 3);
+        glRotatef(-90,0,0,1); 
+        quad(2,0,0,0);
+    glPopMatrix();
+    
+
+
 }
 
 
@@ -747,7 +791,8 @@ void display(void)
 		glClearColor(GRAY1);
 	else
 		glClearColor(GRAY2);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     if(end_game == 0)
 	{
         //================================================================= Viewport1
@@ -983,11 +1028,11 @@ void keyboard(unsigned char key, int x, int y)
             noite = !noite;
             if (noite == 1)
             {
-                luzGlobalCor[0] = 0.3; luzGlobalCor[1] = 0.3; luzGlobalCor[2] = 0.3;
+                luzGlobalCor[0] = 0.3; luzGlobalCor[1] =  0.3; luzGlobalCor[2] =  0.3;
             }
             else
             {
-                luzGlobalCor[0] = 1.0; luzGlobalCor[1] = 1.0; luzGlobalCor[2] = 1.0;
+                luzGlobalCor[0] = 0.7; luzGlobalCor[1] = 0.7; luzGlobalCor[2] = 0.7;
             }
             glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzGlobalCor);
             glutPostRedisplay();
@@ -1115,6 +1160,10 @@ void teclasNotAscii(int key, int x, int y)
 int main(int argc, char** argv){
 
 	glutInit(&argc, argv);
+
+
+
+
 	glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH   | GLUT_STENCIL );
 	glutInitWindowSize (wScreen, hScreen); 
 	glutInitWindowPosition (400, 400); 
