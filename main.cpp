@@ -101,7 +101,7 @@ GLint floorsize=5;
 GLint defaultReflectionSize=2;
 //…………………………………………………………………………………………………………………………………………… labirinto	
 Level levels[3];                                        /*estruturas com todas as informaçoes de cada nivel*/
-GLint level = 0;                                        /* 0, 1 e 2 */
+GLint level = 2;                                        /* 0, 1 e 2 */
 GLfloat entrance = 0;                                   /* por onde a bola entrou no labirinto segundo x*/
 /* cor de cada obstaculo no nivel 3, usando ColorMaterial */
 GLfloat lvl3_colors[N_TRONCOS3+1][4] = {VERMELHO,LARANJA,AMARELO2,VERDE,AZUL,WHITE,VERMELHO,GRAY2,BLACK,VERMELHO,AMARELO2,AZUL,VERMELHO,AMARELO2,LARANJA,WHITE,VERDE,AZUL,WHITE,BLACK,VERMELHO,AMARELO2,VERMELHO,AZUL,AMARELO2,AZUL,WHITE,GRAY2,GRAY1,BLACK,LARANJA};
@@ -175,7 +175,7 @@ void init_levels()
 void initLights(void)
 {
 	/*Ambiente*/
-	//glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzGlobalCor);
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzGlobalCor);
     /* Teto */
     glLightfv(GL_LIGHT0, GL_POSITION, localPos);
     glLightfv(GL_LIGHT0, GL_AMBIENT, localCor);
@@ -214,7 +214,7 @@ void criaDefineTexturas()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    imag.LoadBmpFile("grass1.bmp");
+    imag.LoadBmpFile("grass2.bmp");
     glTexImage2D(GL_TEXTURE_2D, 0, 3, imag.GetNumCols(),imag.GetNumRows(), 0, GL_RGB, GL_UNSIGNED_BYTE,imag.ImageData());
     //----------------------------------------- obstaculos nivel 1
     glGenTextures(1, &tex[1]);
@@ -388,6 +388,7 @@ void draw_troncos(GLint k,GLint level)
     else if(level ==1)
     {   
         glEnable(GL_TEXTURE_2D);
+        glEnable(GL_BLEND);
         glColor4f(GRAY2);
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE); // blending + textura
         glBindTexture(GL_TEXTURE_2D,tex[3]);   
@@ -417,6 +418,7 @@ void draw_troncos(GLint k,GLint level)
                 ascendente = 1;
             }
         }
+        glEnable(GL_BLEND);
         glColor4f(lvl3_colors[k][0],lvl3_colors[k][1],lvl3_colors[k][2],lvl3_colors[k][3]);
     }
     glPushMatrix();	
@@ -435,6 +437,7 @@ void draw_troncos(GLint k,GLint level)
 		gluDeleteQuadric(y);						
 	glPopMatrix();
 	glDisable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
 }
 
 
